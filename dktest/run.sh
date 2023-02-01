@@ -10,13 +10,27 @@ docker run --rm -d --link dktest-one --name dktest-two diskey:dktest
 docker run --rm -d --link dktest-one --name dktest-three diskey:dktest
 
 sleep 15
+docker stop dktest-three
+
+sleep 15
 echo "--- ONE ---"
 docker logs dktest-one
 echo "--- TWO ---"
 docker logs dktest-two
-echo "--- THREE ---"
-docker logs dktest-three
+
 
 docker stop dktest-one
 docker stop dktest-two
-docker stop dktest-three
+
+# sleep 15
+# echo "--- ONE ---"
+# docker logs dktest-one
+# echo "--- TWO ---"
+# docker logs dktest-two
+# echo "--- THREE ---"
+# docker logs dktest-three
+
+
+# docker stop dktest-one
+# docker stop dktest-two
+# docker stop dktest-three

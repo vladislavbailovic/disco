@@ -90,11 +90,25 @@ func (x *Connections) Confirm(cons ...string) {
 	}
 }
 
+func (x *Connections) Unconfirm(cons ...string) {
+	x.lock.Lock()
+	defer x.lock.Unlock()
+	for _, c := range cons {
+		if _, ok := x.cons[c]; ok {
+			// Only unconfirm previously known addresses
+			x.cons[c] = false
+		}
+	}
+}
+
 var connections *Connections = NewConnections()
 
 func hello() {
 	t := time.Tick(time.Second * 5)
 	myself := fmt.Sprintf("%s", GetOutboundIP())
+	client := http.Client{
+		Timeout: time.Second,
+	}
 
 	for {
 		select {
@@ -109,19 +123,27 @@ func hello() {
 					continue
 				}
 				// fmt.Println("pinging", addr)
-				r, err := http.Get(fmt.Sprintf("http://%s:6660", addr))
+				r, err := client.Get(fmt.Sprintf("http://%s:6660", addr))
 				if err != nil {
 					fmt.Println("well, something didn't go well", err)
+					connections.Unconfirm(addr)
+					continue
+				}
+
+				if r.StatusCode != http.StatusOK {
+					fmt.Println("NOT OK!", addr)
+					connections.Unconfirm(addr)
 					continue
 				}
 
 				var res []string
 				defer r.Body.Close()
 				if err := json.NewDecoder(r.Body).Decode(&res); err != nil {
-					// fmt.Println("error parsing response", err)
+					fmt.Println("error parsing response", err)
+					connections.Unconfirm(addr)
 					continue
 				}
-				fmt.Println("adding cons", res)
+				// fmt.Println("adding cons from addr", addr, res)
 				connections.Add(res...)
 			}
 			fmt.Println(myself, "connections", connections.GetConfirmed())
@@ -144,7 +166,7 @@ func handleHello(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("unable to split host/port", err)
 		return
 	}
-	fmt.Println("confirming", host)
+	// fmt.Println("confirming", host)
 	connections.Confirm(host)
 	json.NewEncoder(w).Encode(connections.GetAll())
 }
