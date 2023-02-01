@@ -9,12 +9,14 @@ docker run --rm -d --name dktest-one diskey:dktest
 docker run --rm -d --link dktest-one --name dktest-two diskey:dktest
 docker run --rm -d --link dktest-one --name dktest-three diskey:dktest
 
-sleep 15
+sleep 20
 docker stop dktest-three
 
 sleep 15
+echo
 echo "--- ONE ---"
 docker logs dktest-one
+echo
 echo "--- TWO ---"
 docker logs dktest-two
 

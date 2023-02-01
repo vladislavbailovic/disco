@@ -14,15 +14,72 @@ import (
 // dktest-one is a service name in k8s
 const autodiscoverySeed string = "dktest-one"
 
+func main() {
+	connections := autodiscover()
+	for {
+		time.Sleep(5 * time.Second)
+		fmt.Println("\n--- connections ---\n\t", connections.GetConfirmed(), "\n\t", connections.Status(), "\n------")
+	}
+}
+
+func autodiscover() *Connections {
+	var connections *Connections = NewConnections()
+	myself := fmt.Sprintf("%s", GetOutboundIP())
+	connections.Confirm(myself)
+	go hello(connections)
+
+	http.HandleFunc("/", handleHello(connections))
+	go http.ListenAndServe(":6660", nil)
+
+	return connections
+}
+
+type DiscoveryStatus uint8
+
+const (
+	Init DiscoveryStatus = iota
+	EstablishingQuorum
+	Ready
+)
+
+func (x DiscoveryStatus) String() string {
+	switch x {
+	case Init:
+		return "Initialized Discovery"
+	case EstablishingQuorum:
+		return "Establishing Quorum"
+	case Ready:
+		return "Ready"
+	}
+	panic("unknown discovery status")
+}
+
 type Connections struct {
-	lock sync.RWMutex
-	cons map[string]bool
+	status DiscoveryStatus
+	lock   sync.RWMutex
+	cons   map[string]bool
 }
 
 func NewConnections() *Connections {
 	return &Connections{
 		cons: make(map[string]bool, 10),
 	}
+}
+
+func (x *Connections) SetReady(ready bool) {
+	x.lock.Lock()
+	defer x.lock.Unlock()
+	if ready {
+		x.status = Ready
+	} else {
+		x.status = EstablishingQuorum
+	}
+}
+
+func (x *Connections) Status() DiscoveryStatus {
+	x.lock.RLock()
+	defer x.lock.RUnlock()
+	return x.status
 }
 
 func (x *Connections) GetAll() []string {
@@ -101,9 +158,7 @@ func (x *Connections) Unconfirm(cons ...string) {
 	}
 }
 
-var connections *Connections = NewConnections()
-
-func hello() {
+func hello(connections *Connections) {
 	t := time.Tick(time.Second * 5)
 	myself := fmt.Sprintf("%s", GetOutboundIP())
 	client := http.Client{
@@ -125,13 +180,13 @@ func hello() {
 				// fmt.Println("pinging", addr)
 				r, err := client.Get(fmt.Sprintf("http://%s:6660", addr))
 				if err != nil {
-					fmt.Println("well, something didn't go well", err)
+					// fmt.Println("well, something didn't go well", err)
 					connections.Unconfirm(addr)
 					continue
 				}
 
 				if r.StatusCode != http.StatusOK {
-					fmt.Println("NOT OK!", addr)
+					// fmt.Println("NOT OK!", addr)
 					connections.Unconfirm(addr)
 					continue
 				}
@@ -139,36 +194,30 @@ func hello() {
 				var res []string
 				defer r.Body.Close()
 				if err := json.NewDecoder(r.Body).Decode(&res); err != nil {
-					fmt.Println("error parsing response", err)
+					// fmt.Println("error parsing response", err)
 					connections.Unconfirm(addr)
 					continue
 				}
 				// fmt.Println("adding cons from addr", addr, res)
 				connections.Add(res...)
+
+				connections.SetReady(len(res) == len(connections.GetConfirmed()))
 			}
-			fmt.Println(myself, "connections", connections.GetConfirmed())
 		}
 	}
 }
 
-func main() {
-	myself := fmt.Sprintf("%s", GetOutboundIP())
-	connections.Confirm(myself)
-	go hello()
-
-	http.HandleFunc("/", handleHello)
-	http.ListenAndServe(":6660", nil)
-}
-
-func handleHello(w http.ResponseWriter, r *http.Request) {
-	host, _ /*port*/, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		fmt.Println("unable to split host/port", err)
-		return
+func handleHello(connections *Connections) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		host, _ /*port*/, err := net.SplitHostPort(r.RemoteAddr)
+		if err != nil {
+			fmt.Println("unable to split host/port", err)
+			return
+		}
+		// fmt.Println("confirming", host)
+		connections.Confirm(host)
+		json.NewEncoder(w).Encode(connections.GetConfirmed())
 	}
-	// fmt.Println("confirming", host)
-	connections.Confirm(host)
-	json.NewEncoder(w).Encode(connections.GetAll())
 }
 
 // Get preferred outbound ip of this machine
