@@ -16,59 +16,77 @@ const autodiscoverySeed string = "dktest-one"
 
 type Connections struct {
 	lock sync.RWMutex
-	cons []string
+	cons map[string]bool
 }
 
 func NewConnections() *Connections {
-	return &Connections{}
+	return &Connections{
+		cons: make(map[string]bool, 10),
+	}
 }
 
 func (x *Connections) GetAll() []string {
-	x.lock.RLock()
-	defer x.lock.RUnlock()
-	return x.cons
+	cons := x.getAll()
+	sort.Strings(cons)
+	return cons
 }
 
-func (x *Connections) Len() int {
+func (x *Connections) getAll() []string {
 	x.lock.RLock()
 	defer x.lock.RUnlock()
-	return len(x.cons)
+	cons := make([]string, 0, len(x.cons))
+	for addr, _ := range x.cons {
+		cons = append(cons, addr)
+	}
+	return cons
 }
 
-func (x *Connections) LenExcept(addr string) int {
+func (x *Connections) GetConfirmed() []string {
+	cons := x.getConfirmed()
+	sort.Strings(cons)
+	return cons
+}
+
+func (x *Connections) getConfirmed() []string {
 	x.lock.RLock()
 	defer x.lock.RUnlock()
-	count := 0
-	for _, c := range x.cons {
-		if c == addr {
-			continue
+	cons := make([]string, 0, len(x.cons))
+	for addr, confirmed := range x.cons {
+		if confirmed {
+			cons = append(cons, addr)
 		}
-		count += 1
+	}
+	return cons
+}
+
+func (x *Connections) TotalLenExcept(addr string) int {
+	x.lock.RLock()
+	defer x.lock.RUnlock()
+	count := len(x.cons)
+	if _, ok := x.cons[addr]; ok {
+		count -= 1
 	}
 	return count
 }
 
 func (x *Connections) Add(cons ...string) {
+	x.lock.Lock()
+	defer x.lock.Unlock()
 	for _, c := range cons {
-		x.add(c)
-	}
-	x.lock.Lock()
-	defer x.lock.Unlock()
-	sort.Strings(x.cons)
-}
-
-func (x *Connections) add(c string) {
-	x.lock.Lock()
-	defer x.lock.Unlock()
-	alreadyPresent := false
-	for _, con := range x.cons {
-		if con == c {
-			alreadyPresent = true
-			break
+		if _, ok := x.cons[c]; !ok {
+			// Only add if we don't know about its status previously
+			// This is so that we don't trump its status if it's already confirmed
+			x.cons[c] = false
 		}
 	}
-	if !alreadyPresent {
-		x.cons = append(x.cons, c)
+}
+
+func (x *Connections) Confirm(cons ...string) {
+	x.lock.Lock()
+	defer x.lock.Unlock()
+	for _, c := range cons {
+		// Confirm just adds address unconditionally
+		x.cons[c] = true
 	}
 }
 
@@ -82,7 +100,7 @@ func hello() {
 		select {
 		case <-t:
 			cons := []string{autodiscoverySeed}
-			if connections.LenExcept(myself) > 0 {
+			if connections.TotalLenExcept(myself) > 0 {
 				cons = connections.GetAll()
 			}
 			for _, addr := range cons {
@@ -103,17 +121,17 @@ func hello() {
 					// fmt.Println("error parsing response", err)
 					continue
 				}
-				// fmt.Println("request: adding cons", res)
+				fmt.Println("adding cons", res)
 				connections.Add(res...)
 			}
-			fmt.Println(myself, "connections", connections.GetAll())
+			fmt.Println(myself, "connections", connections.GetConfirmed())
 		}
 	}
 }
 
 func main() {
 	myself := fmt.Sprintf("%s", GetOutboundIP())
-	connections.Add(myself)
+	connections.Confirm(myself)
 	go hello()
 
 	http.HandleFunc("/", handleHello)
@@ -126,8 +144,8 @@ func handleHello(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("unable to split host/port", err)
 		return
 	}
-	fmt.Println("response: adding host con", host)
-	connections.Add(host)
+	fmt.Println("confirming", host)
+	connections.Confirm(host)
 	json.NewEncoder(w).Encode(connections.GetAll())
 }
 
