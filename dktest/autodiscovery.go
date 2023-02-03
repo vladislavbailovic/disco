@@ -8,11 +8,11 @@ import (
 	"time"
 )
 
-func autodiscover() *Peers {
+func autodiscover(seed string) *Peers {
 	var peers *Peers = NewPeers()
 	myself := fmt.Sprintf("%s", GetOutboundIP())
 	peers.confirm(myself)
-	go hello(peers)
+	go hello(seed, peers)
 
 	http.HandleFunc("/", handleHello(peers))
 	go http.ListenAndServe(":6660", nil)
@@ -20,7 +20,7 @@ func autodiscover() *Peers {
 	return peers
 }
 
-func hello(peers *Peers) {
+func hello(seed string, peers *Peers) {
 	t := time.Tick(time.Second * 5)
 	myself := fmt.Sprintf("%s", GetOutboundIP())
 	client := http.Client{
@@ -30,7 +30,7 @@ func hello(peers *Peers) {
 	for {
 		select {
 		case <-t:
-			cons := []string{autodiscoverySeed}
+			cons := []string{seed}
 			if peers.totalLenExcept(myself) > 0 {
 				cons = peers.getAll()
 			}
