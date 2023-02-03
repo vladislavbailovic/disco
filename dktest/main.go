@@ -15,23 +15,23 @@ import (
 const autodiscoverySeed string = "dktest-one"
 
 func main() {
-	connections := autodiscover()
+	peers := autodiscover()
 	for {
 		time.Sleep(5 * time.Second)
-		fmt.Println("\n--- connections ---\n\t", connections.GetConfirmed(), "\n\t", connections.Status(), "\n------")
+		fmt.Println("\n--- peers ---\n\t", peers.GetConfirmed(), "\n\t", peers.Status(), "\n------")
 	}
 }
 
-func autodiscover() *Connections {
-	var connections *Connections = NewConnections()
+func autodiscover() *Peers {
+	var peers *Peers = NewPeers()
 	myself := fmt.Sprintf("%s", GetOutboundIP())
-	connections.Confirm(myself)
-	go hello(connections)
+	peers.Confirm(myself)
+	go hello(peers)
 
-	http.HandleFunc("/", handleHello(connections))
+	http.HandleFunc("/", handleHello(peers))
 	go http.ListenAndServe(":6660", nil)
 
-	return connections
+	return peers
 }
 
 type DiscoveryStatus uint8
@@ -54,19 +54,19 @@ func (x DiscoveryStatus) String() string {
 	panic("unknown discovery status")
 }
 
-type Connections struct {
+type Peers struct {
 	status DiscoveryStatus
 	lock   sync.RWMutex
 	cons   map[string]bool
 }
 
-func NewConnections() *Connections {
-	return &Connections{
+func NewPeers() *Peers {
+	return &Peers{
 		cons: make(map[string]bool, 10),
 	}
 }
 
-func (x *Connections) SetReady(ready bool) {
+func (x *Peers) SetReady(ready bool) {
 	x.lock.Lock()
 	defer x.lock.Unlock()
 	if ready {
@@ -76,19 +76,19 @@ func (x *Connections) SetReady(ready bool) {
 	}
 }
 
-func (x *Connections) Status() DiscoveryStatus {
+func (x *Peers) Status() DiscoveryStatus {
 	x.lock.RLock()
 	defer x.lock.RUnlock()
 	return x.status
 }
 
-func (x *Connections) GetAll() []string {
+func (x *Peers) GetAll() []string {
 	cons := x.getAll()
 	sort.Strings(cons)
 	return cons
 }
 
-func (x *Connections) getAll() []string {
+func (x *Peers) getAll() []string {
 	x.lock.RLock()
 	defer x.lock.RUnlock()
 	cons := make([]string, 0, len(x.cons))
@@ -98,13 +98,13 @@ func (x *Connections) getAll() []string {
 	return cons
 }
 
-func (x *Connections) GetConfirmed() []string {
+func (x *Peers) GetConfirmed() []string {
 	cons := x.getConfirmed()
 	sort.Strings(cons)
 	return cons
 }
 
-func (x *Connections) getConfirmed() []string {
+func (x *Peers) getConfirmed() []string {
 	x.lock.RLock()
 	defer x.lock.RUnlock()
 	cons := make([]string, 0, len(x.cons))
@@ -116,7 +116,7 @@ func (x *Connections) getConfirmed() []string {
 	return cons
 }
 
-func (x *Connections) TotalLenExcept(addr string) int {
+func (x *Peers) TotalLenExcept(addr string) int {
 	x.lock.RLock()
 	defer x.lock.RUnlock()
 	count := len(x.cons)
@@ -126,7 +126,7 @@ func (x *Connections) TotalLenExcept(addr string) int {
 	return count
 }
 
-func (x *Connections) Add(cons ...string) {
+func (x *Peers) Add(cons ...string) {
 	x.lock.Lock()
 	defer x.lock.Unlock()
 	for _, c := range cons {
@@ -138,7 +138,7 @@ func (x *Connections) Add(cons ...string) {
 	}
 }
 
-func (x *Connections) Confirm(cons ...string) {
+func (x *Peers) Confirm(cons ...string) {
 	x.lock.Lock()
 	defer x.lock.Unlock()
 	for _, c := range cons {
@@ -147,7 +147,7 @@ func (x *Connections) Confirm(cons ...string) {
 	}
 }
 
-func (x *Connections) Unconfirm(cons ...string) {
+func (x *Peers) Unconfirm(cons ...string) {
 	x.lock.Lock()
 	defer x.lock.Unlock()
 	for _, c := range cons {
@@ -158,7 +158,7 @@ func (x *Connections) Unconfirm(cons ...string) {
 	}
 }
 
-func hello(connections *Connections) {
+func hello(peers *Peers) {
 	t := time.Tick(time.Second * 5)
 	myself := fmt.Sprintf("%s", GetOutboundIP())
 	client := http.Client{
@@ -169,8 +169,8 @@ func hello(connections *Connections) {
 		select {
 		case <-t:
 			cons := []string{autodiscoverySeed}
-			if connections.TotalLenExcept(myself) > 0 {
-				cons = connections.GetAll()
+			if peers.TotalLenExcept(myself) > 0 {
+				cons = peers.GetAll()
 			}
 			for _, addr := range cons {
 				if addr == myself {
@@ -181,13 +181,13 @@ func hello(connections *Connections) {
 				r, err := client.Get(fmt.Sprintf("http://%s:6660", addr))
 				if err != nil {
 					// fmt.Println("well, something didn't go well", err)
-					connections.Unconfirm(addr)
+					peers.Unconfirm(addr)
 					continue
 				}
 
 				if r.StatusCode != http.StatusOK {
 					// fmt.Println("NOT OK!", addr)
-					connections.Unconfirm(addr)
+					peers.Unconfirm(addr)
 					continue
 				}
 
@@ -195,19 +195,19 @@ func hello(connections *Connections) {
 				defer r.Body.Close()
 				if err := json.NewDecoder(r.Body).Decode(&res); err != nil {
 					// fmt.Println("error parsing response", err)
-					connections.Unconfirm(addr)
+					peers.Unconfirm(addr)
 					continue
 				}
 				// fmt.Println("adding cons from addr", addr, res)
-				connections.Add(res...)
+				peers.Add(res...)
 
-				connections.SetReady(len(res) == len(connections.GetConfirmed()))
+				peers.SetReady(len(res) == len(peers.GetConfirmed()))
 			}
 		}
 	}
 }
 
-func handleHello(connections *Connections) func(http.ResponseWriter, *http.Request) {
+func handleHello(peers *Peers) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		host, _ /*port*/, err := net.SplitHostPort(r.RemoteAddr)
 		if err != nil {
@@ -215,8 +215,8 @@ func handleHello(connections *Connections) func(http.ResponseWriter, *http.Reque
 			return
 		}
 		// fmt.Println("confirming", host)
-		connections.Confirm(host)
-		json.NewEncoder(w).Encode(connections.GetConfirmed())
+		peers.Confirm(host)
+		json.NewEncoder(w).Encode(peers.GetConfirmed())
 	}
 }
 
