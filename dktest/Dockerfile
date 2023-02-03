@@ -3,7 +3,7 @@ FROM golang:1.19-alpine3.16 as buildStage
 WORKDIR /app
 COPY . .
 
-RUN go build -o wat main.go
+RUN go build -o wat .
 
 FROM alpine:latest
 
