@@ -14,7 +14,7 @@ func Autodiscover(seed string) *Peers {
 	peers.confirm(myself)
 	go hello(seed, peers)
 
-	http.HandleFunc("/", handleHello(peers))
+	http.HandleFunc("/hello", handleHello(peers))
 	go http.ListenAndServe(":6660", nil)
 
 	return peers
@@ -40,7 +40,7 @@ func hello(seed string, peers *Peers) {
 					continue
 				}
 				// fmt.Println("pinging", addr)
-				r, err := client.Get(fmt.Sprintf("http://%s:6660", addr))
+				r, err := client.Get(fmt.Sprintf("http://%s:6660/hello", addr))
 				if err != nil {
 					// fmt.Println("well, something didn't go well", err)
 					peers.unconfirm(addr)
