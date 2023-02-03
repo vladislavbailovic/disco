@@ -1,4 +1,4 @@
-package main
+package network
 
 import (
 	"encoding/json"
@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func autodiscover(seed string) *Peers {
+func Autodiscover(seed string) *Peers {
 	var peers *Peers = NewPeers()
 	myself := fmt.Sprintf("%s", GetOutboundIP())
 	peers.confirm(myself)
