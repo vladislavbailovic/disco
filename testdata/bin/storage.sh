@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -ex
 go vet .
 
 docker build . -t disco:storage -f testdata/Dockerfile-storage

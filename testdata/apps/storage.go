@@ -4,7 +4,6 @@ import (
 	"disco/network"
 	"fmt"
 	"net/http"
-	"net/url"
 	"time"
 )
 
@@ -45,8 +44,7 @@ func handleDispatch(peers *network.Peers) func(http.ResponseWriter, *http.Reques
 		fmt.Println("Requested", key)
 		instance := getInstance(key, peers)
 		fmt.Println(network.GetOutboundIP(), "peers:", peers.Status(), peers.Get())
-		instanceUrl, _ := url.Parse("http://" + instance + ":6660")
-		requestUrl, _ := url.JoinPath(instanceUrl.String(), "_storage")
+		requestUrl := "http://" + instance + ":6660/_storage"
 		fmt.Println("Gonna ask instance", requestUrl+"?key="+key)
 
 		resp, err := http.Get(requestUrl + "?key=" + key)

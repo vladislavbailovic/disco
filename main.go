@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"strings"
 )
 
@@ -50,11 +51,7 @@ func handleDispatch(w http.ResponseWriter, r *http.Request) {
 			serverError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
-		url, err := url.JoinPath(instanceUrl.String(), key)
-		if err != nil {
-			serverError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
+		url := path.Join(instanceUrl.String(), key)
 
 		resp, err := http.Get(url)
 		if err != nil {
@@ -77,11 +74,7 @@ func handleDispatch(w http.ResponseWriter, r *http.Request) {
 			serverError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
-		url, err := url.JoinPath(instanceUrl.String(), key)
-		if err != nil {
-			serverError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
+		url := path.Join(instanceUrl.String(), key)
 
 		defer r.Body.Close()
 		req, err := http.NewRequest(http.MethodPost, url, r.Body)
