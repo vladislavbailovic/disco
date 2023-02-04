@@ -11,7 +11,7 @@ import (
 )
 
 func TestStorage_FetchError(t *testing.T) {
-	s := NewStorage()
+	s := NewStorage(nil)
 	key, _ := store.NewKey("test")
 	if _, err := s.fetch(key); err == nil {
 		t.Error("expected error")
@@ -21,7 +21,7 @@ func TestStorage_FetchError(t *testing.T) {
 }
 
 func TestStorage_FetchPut(t *testing.T) {
-	s := NewStorage()
+	s := NewStorage(nil)
 	key, _ := store.NewKey("test")
 	s.put(key, "wat")
 	if v, err := s.fetch(key); err != nil {
@@ -32,7 +32,7 @@ func TestStorage_FetchPut(t *testing.T) {
 }
 
 func TestStorage_NoKey(t *testing.T) {
-	s := NewStorage()
+	s := NewStorage(nil)
 	w := httptest.NewRecorder()
 	lnk, _ := url.Parse("http://localhost/")
 	s.Handle(w, &http.Request{
@@ -45,7 +45,7 @@ func TestStorage_NoKey(t *testing.T) {
 }
 
 func TestStorage_MissingKey(t *testing.T) {
-	s := NewStorage()
+	s := NewStorage(nil)
 	w := httptest.NewRecorder()
 	lnk, _ := url.Parse("http://localhost/?key=wat")
 	s.Handle(w, &http.Request{
@@ -65,7 +65,7 @@ func TestStorage_MissingKey(t *testing.T) {
 }
 
 func TestStorage_HappyPath(t *testing.T) {
-	s := NewStorage()
+	s := NewStorage(nil)
 	expected := "YAY this is the proper value"
 	key, _ := store.NewKey("wat")
 	s.put(key, expected)
@@ -88,7 +88,7 @@ func TestStorage_HappyPath(t *testing.T) {
 }
 
 func TestStorage_HappyPathRoundtrip(t *testing.T) {
-	s := NewStorage()
+	s := NewStorage(nil)
 	expected := "YAY this is the proper value"
 	lnk, _ := url.Parse("http://localhost/?key=wat")
 

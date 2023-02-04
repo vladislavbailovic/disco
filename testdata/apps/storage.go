@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"disco/network"
 	"disco/storage"
+	"disco/store"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -13,12 +14,13 @@ import (
 /// diskey: Distributed in-memory key-value storage
 
 func main() {
+	store := store.NewPlainStore()
 	peers := network.Autodiscover("storage-one")
 	cfg := storage.NewStorageConfig("storage", ":6660")
-	dispatch := storage.NewDispatch(peers, cfg)
-	store := storage.NewStorage()
-	http.HandleFunc(cfg.DispatchPath, dispatch.Handle)
-	http.HandleFunc(cfg.StoragePath, store.Handle)
+	dispatchHandler := storage.NewDispatch(peers, cfg)
+	storageHandler := storage.NewStorage(store)
+	http.HandleFunc(cfg.DispatchPath, dispatchHandler.Handle)
+	http.HandleFunc(cfg.StoragePath, storageHandler.Handle)
 	go http.ListenAndServe(cfg.Addr, nil)
 
 	t := time.Tick(time.Second * 5)

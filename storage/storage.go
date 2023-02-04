@@ -29,12 +29,15 @@ func NewStorageConfig(base, addr string) StorageConfig {
 
 type Storage struct {
 	lock  sync.RWMutex
-	store map[string]string
+	store store.Storer
 }
 
-func NewStorage() *Storage {
+func NewStorage(str store.Storer) *Storage {
+	if str == nil {
+		str = store.Default()
+	}
 	return &Storage{
-		store: map[string]string{},
+		store: str,
 	}
 }
 
@@ -92,7 +95,9 @@ func (x *Storage) fetch(key *store.Key) (string, error) {
 	x.lock.RLock()
 	defer x.lock.RUnlock()
 
-	if val, ok := x.store[key.String()]; ok {
+	if val, err := x.store.Fetch(key); err != nil {
+		return "", err
+	} else {
 		return val, nil
 	}
 	return "", fmt.Errorf("unknown key: %q", key)
@@ -102,5 +107,5 @@ func (x *Storage) put(key *store.Key, val string) {
 	x.lock.Lock()
 	defer x.lock.Unlock()
 
-	x.store[key.String()] = val
+	x.store.Put(key, val)
 }
