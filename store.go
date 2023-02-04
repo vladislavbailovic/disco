@@ -3,6 +3,7 @@ package main
 import (
 	"disco/network"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strings"
 	"sync"
@@ -43,6 +44,19 @@ func (x *Store) handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	switch r.Method {
+	case http.MethodGet:
+		x.handleGet(key, w, r)
+		return
+	case http.MethodPost:
+		x.handlePost(key, w, r)
+		return
+	}
+
+	w.WriteHeader(http.StatusBadRequest)
+}
+
+func (x *Store) handleGet(key string, w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("[%v]: gets key %q from storage\n",
 		network.GetOutboundIP(), key)
 
@@ -55,6 +69,21 @@ func (x *Store) handle(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, "%s", value)
+}
+
+func (x *Store) handlePost(key string, w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("[%v]: sets key %q in storage\n",
+		network.GetOutboundIP(), key)
+
+	defer r.Body.Close()
+	value, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	x.put(key, string(value))
+	w.WriteHeader(http.StatusOK)
 }
 
 func (x *Store) fetch(key string) (string, error) {
