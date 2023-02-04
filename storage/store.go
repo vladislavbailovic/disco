@@ -1,4 +1,4 @@
-package main
+package storage
 
 import (
 	"disco/network"
@@ -10,19 +10,19 @@ import (
 )
 
 type StoreConfig struct {
-	addr         string
-	port         string
-	storagePath  string
-	dispatchPath string
+	Addr         string
+	Port         string
+	StoragePath  string
+	DispatchPath string
 }
 
 func NewStoreConfig(base, addr string) StoreConfig {
 	split := strings.SplitN(addr, ":", 2)
 	return StoreConfig{
-		addr:         addr,
-		port:         split[1],
-		dispatchPath: "/" + base,
-		storagePath:  "/_" + base,
+		Addr:         addr,
+		Port:         split[1],
+		DispatchPath: "/" + base,
+		StoragePath:  "/_" + base,
 	}
 }
 
@@ -37,7 +37,7 @@ func NewStore() *Store {
 	}
 }
 
-func (x *Store) handle(w http.ResponseWriter, r *http.Request) {
+func (x *Store) Handle(w http.ResponseWriter, r *http.Request) {
 	key := r.URL.Query().Get("key")
 	if key == "" {
 		w.WriteHeader(http.StatusBadRequest)

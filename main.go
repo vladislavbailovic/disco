@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"disco/network"
+	"disco/storage"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -13,12 +14,12 @@ import (
 
 func main() {
 	peers := network.Autodiscover("storage-one")
-	cfg := NewStoreConfig("storage", ":6660")
-	dispatch := NewDispatch(peers, cfg)
-	store := NewStore()
-	http.HandleFunc(cfg.dispatchPath, dispatch.handle)
-	http.HandleFunc(cfg.storagePath, store.handle)
-	go http.ListenAndServe(cfg.addr, nil)
+	cfg := storage.NewStoreConfig("storage", ":6660")
+	dispatch := storage.NewDispatch(peers, cfg)
+	store := storage.NewStore()
+	http.HandleFunc(cfg.DispatchPath, dispatch.Handle)
+	http.HandleFunc(cfg.StoragePath, store.Handle)
+	go http.ListenAndServe(cfg.Addr, nil)
 
 	t := time.Tick(time.Second * 5)
 	for {

@@ -1,4 +1,4 @@
-package main
+package storage
 
 import (
 	"bytes"
@@ -21,15 +21,15 @@ type Dispatch struct {
 func NewDispatch(peers *network.Peers, cfg StoreConfig) *Dispatch {
 	return &Dispatch{
 		peers:           peers,
-		storageEndpoint: cfg.storagePath,
-		storagePort:     cfg.port,
+		storageEndpoint: cfg.StoragePath,
+		storagePort:     cfg.Port,
 		client: &http.Client{
 			Timeout: 1 * time.Second,
 		},
 	}
 }
 
-func (x *Dispatch) handle(w http.ResponseWriter, r *http.Request) {
+func (x *Dispatch) Handle(w http.ResponseWriter, r *http.Request) {
 	if x.peers == nil || x.peers.Status() != network.Ready {
 		w.WriteHeader(http.StatusInternalServerError)
 		if x.peers != nil {

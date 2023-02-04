@@ -1,4 +1,4 @@
-package main
+package storage
 
 import (
 	"bytes"
@@ -32,7 +32,7 @@ func TestStore_NoKey(t *testing.T) {
 	s := NewStore()
 	w := httptest.NewRecorder()
 	lnk, _ := url.Parse("http://localhost/")
-	s.handle(w, &http.Request{
+	s.Handle(w, &http.Request{
 		URL:    lnk,
 		Method: http.MethodGet,
 	})
@@ -45,7 +45,7 @@ func TestStore_MissingKey(t *testing.T) {
 	s := NewStore()
 	w := httptest.NewRecorder()
 	lnk, _ := url.Parse("http://localhost/?key=wat")
-	s.handle(w, &http.Request{
+	s.Handle(w, &http.Request{
 		URL:    lnk,
 		Method: http.MethodGet,
 	})
@@ -67,7 +67,7 @@ func TestStore_HappyPath(t *testing.T) {
 	s.put("wat", expected)
 	w := httptest.NewRecorder()
 	lnk, _ := url.Parse("http://localhost/?key=wat")
-	s.handle(w, &http.Request{
+	s.Handle(w, &http.Request{
 		URL:    lnk,
 		Method: http.MethodGet,
 	})
@@ -89,7 +89,7 @@ func TestStore_HappyPathRoundtrip(t *testing.T) {
 	lnk, _ := url.Parse("http://localhost/?key=wat")
 
 	w := httptest.NewRecorder()
-	s.handle(w, &http.Request{
+	s.Handle(w, &http.Request{
 		URL:    lnk,
 		Method: http.MethodGet,
 	})
@@ -103,13 +103,13 @@ func TestStore_HappyPathRoundtrip(t *testing.T) {
 		lnk.String(),
 		bytes.NewBuffer([]byte(expected)),
 	)
-	s.handle(w, post)
+	s.Handle(w, post)
 	if w.Code != http.StatusOK {
 		t.Errorf("expected 200OK saving the value")
 	}
 
 	w = httptest.NewRecorder()
-	s.handle(w, &http.Request{
+	s.Handle(w, &http.Request{
 		URL:    lnk,
 		Method: http.MethodGet,
 	})

@@ -1,4 +1,4 @@
-package main
+package storage
 
 import (
 	"disco/network"
@@ -15,7 +15,7 @@ import (
 func TestDispatch_ErrorsOnNilPeers(t *testing.T) {
 	d := NewDispatch(nil, NewStoreConfig("storage", ":6660"))
 	w := httptest.NewRecorder()
-	d.handle(w, nil)
+	d.Handle(w, nil)
 	if w.Code != http.StatusInternalServerError {
 		t.Errorf("expected Err500 on empty peers dispatch")
 	}
@@ -24,7 +24,7 @@ func TestDispatch_ErrorsOnNilPeers(t *testing.T) {
 func TestDispatch_ErrorsOnPeersInit(t *testing.T) {
 	d := NewDispatch(network.NewPeers(), NewStoreConfig("storage", ":6660"))
 	w := httptest.NewRecorder()
-	d.handle(w, nil)
+	d.Handle(w, nil)
 	if w.Code != http.StatusInternalServerError {
 		t.Errorf("expected Err500 on empty peers dispatch")
 	}
@@ -98,7 +98,7 @@ func TestDispatch_NoKey(t *testing.T) {
 	d := NewDispatch(p, NewStoreConfig("storage", ":6660"))
 	w := httptest.NewRecorder()
 	lnk, _ := url.Parse("http://localhost/")
-	d.handle(w, &http.Request{
+	d.Handle(w, &http.Request{
 		URL: lnk,
 	})
 	if w.Code != http.StatusBadRequest {
@@ -117,7 +117,7 @@ func TestDispatch_ErrorsWithNoStorageServer(t *testing.T) {
 	}
 	w := httptest.NewRecorder()
 	lnk, _ := url.Parse("http://whatever-fake-host/?key=AAA")
-	d.handle(w, &http.Request{
+	d.Handle(w, &http.Request{
 		URL:    lnk,
 		Method: http.MethodGet,
 	})
@@ -157,7 +157,7 @@ func TestDispatch_HappyPath(t *testing.T) {
 		"/?key=AAA",
 		nil)
 
-	d.handle(w, r)
+	d.Handle(w, r)
 	if w.Code != http.StatusOK {
 		t.Errorf("expected 200OK on transport error")
 	}
