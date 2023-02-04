@@ -34,28 +34,6 @@ func handleStorage(http.ResponseWriter, *http.Request) {
 	fmt.Println(network.GetOutboundIP(), "gets key from storage")
 }
 
-func getInstance(key string, peers *network.Peers) string {
-	keyspaces := []struct {
-		min, max int
-	}{
-		{min: int('0'), max: int('9')},
-		{min: int('A'), max: int('Z')},
-		{min: int('a'), max: int('z')},
-	}
-	instances := peers.Get()
-	for _, keyspace := range keyspaces {
-		test := int(key[0])
-		if test >= keyspace.min && test <= keyspace.max {
-			total := keyspace.max - keyspace.min + 1
-			test -= keyspace.min + 1
-			stride := total / len(instances)
-			idx := (test - 1) / stride
-			return instances[idx]
-		}
-	}
-	panic("GTFO")
-}
-
 var _storage map[string]string = make(map[string]string)
 
 func getStored(key string) (string, error) {

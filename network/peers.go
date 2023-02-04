@@ -29,7 +29,8 @@ func (x *Peers) Status() DiscoveryStatus {
 	return x.status
 }
 
-func (x *Peers) setReady(ready bool) {
+/// Public because of tests
+func (x *Peers) SetReady(ready bool) {
 	x.lock.Lock()
 	defer x.lock.Unlock()
 	if ready {
@@ -84,11 +85,12 @@ func (x *Peers) add(cons ...string) {
 	}
 }
 
-func (x *Peers) confirm(cons ...string) {
+/// Confirm just adds address unconditionally
+/// Public because of testing
+func (x *Peers) Confirm(cons ...string) {
 	x.lock.Lock()
 	defer x.lock.Unlock()
 	for _, c := range cons {
-		// Confirm just adds address unconditionally
 		x.cons[c] = true
 	}
 }

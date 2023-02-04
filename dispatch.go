@@ -5,15 +5,25 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"time"
 )
 
 type Dispatch struct {
-	peers *network.Peers
+	peers           *network.Peers
+	client          *http.Client
+	storageEndpoint string
+	storagePort     string
 }
 
 func NewDispatch(peers *network.Peers) *Dispatch {
 	return &Dispatch{
-		peers: peers,
+		peers:           peers,
+		storageEndpoint: "_storage",
+		storagePort:     "6660",
+		client: &http.Client{
+			Timeout: 1 * time.Second,
+		},
 	}
 }
 
@@ -26,22 +36,58 @@ func (x *Dispatch) handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	key := r.URL.Query()["key"][0]
-	fmt.Println("Requested", key)
-	instance := getInstance(key, x.peers)
-	fmt.Println(network.GetOutboundIP(), "peers:", x.peers.Status(), x.peers.Get())
-	requestUrl := "http://" + instance + ":6660/_storage"
-	fmt.Println("Gonna ask instance", requestUrl+"?key="+key)
+	key := r.URL.Query().Get("key")
+	if key == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
-	resp, err := http.Get(requestUrl + "?key=" + key)
+	reqUrl := x.getInstanceURL(key)
+	fmt.Printf("[%v]: dispatching to instance %q\n",
+		network.GetOutboundIP(),
+		reqUrl.String())
+
+	resp, err := x.client.Get(reqUrl.String())
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
 		return
 	}
-	fmt.Println("instance responded with", resp.StatusCode)
+
 	w.WriteHeader(resp.StatusCode)
 
-	defer r.Body.Close()
-	io.Copy(w, r.Body)
+	defer resp.Body.Close()
+	io.Copy(w, resp.Body)
+}
+
+func (x *Dispatch) getInstanceURL(key string) url.URL {
+	instance := x.getInstance(key)
+	return url.URL{
+		Scheme:   "http",
+		Host:     instance + ":" + x.storagePort,
+		Path:     x.storageEndpoint,
+		RawQuery: "key=" + url.QueryEscape(key),
+	}
+}
+
+func (x *Dispatch) getInstance(key string) string {
+	keyspaces := []struct {
+		min, max int
+	}{
+		{min: int('0'), max: int('9')},
+		{min: int('A'), max: int('Z')},
+		{min: int('a'), max: int('z')},
+	}
+	instances := x.peers.Get()
+	for _, keyspace := range keyspaces {
+		test := int(key[0])
+		if test >= keyspace.min && test <= keyspace.max {
+			total := keyspace.max - keyspace.min + 1
+			test -= keyspace.min + 1
+			stride := total / len(instances)
+			idx := (test - 1) / stride
+			return instances[idx]
+		}
+	}
+	panic("GTFO")
 }

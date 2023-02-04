@@ -11,7 +11,7 @@ import (
 func Autodiscover(seed string) *Peers {
 	var peers *Peers = NewPeers()
 	myself := fmt.Sprintf("%s", GetOutboundIP())
-	peers.confirm(myself)
+	peers.Confirm(myself)
 	go hello(seed, peers)
 
 	http.HandleFunc("/hello", handleHello(peers))
@@ -63,7 +63,7 @@ func hello(seed string, peers *Peers) {
 				// fmt.Println("adding cons from addr", addr, res)
 				peers.add(res...)
 
-				peers.setReady(len(res) == len(peers.getConfirmed()))
+				peers.SetReady(len(res) == len(peers.getConfirmed()))
 			}
 		}
 	}
@@ -77,7 +77,7 @@ func handleHello(peers *Peers) func(http.ResponseWriter, *http.Request) {
 			return
 		}
 		// fmt.Println("confirming", host)
-		peers.confirm(host)
+		peers.Confirm(host)
 		json.NewEncoder(w).Encode(peers.Get())
 	}
 }
