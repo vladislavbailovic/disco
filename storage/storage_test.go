@@ -13,7 +13,7 @@ import (
 func TestStorage_FetchError(t *testing.T) {
 	s := NewStorage(nil)
 	key, _ := store.NewKey("test")
-	if _, err := s.fetch(key); err == nil {
+	if _, err := s.Fetch(key); err == nil {
 		t.Error("expected error")
 	} else if "unknown key: \"test\"" != err.Error() {
 		t.Errorf("unexpected error: %q", err)
@@ -23,10 +23,10 @@ func TestStorage_FetchError(t *testing.T) {
 func TestStorage_FetchPut(t *testing.T) {
 	s := NewStorage(nil)
 	key, _ := store.NewKey("test")
-	s.put(key, "wat")
-	if v, err := s.fetch(key); err != nil {
+	s.Put(key, "wat")
+	if v, err := s.Fetch(key); err != nil {
 		t.Errorf("unexpected error: %q", err)
-	} else if v != "wat" {
+	} else if v.Value() != "wat" {
 		t.Errorf("unexpected value: %q", v)
 	}
 }
@@ -68,7 +68,7 @@ func TestStorage_HappyPath(t *testing.T) {
 	s := NewStorage(nil)
 	expected := "YAY this is the proper value"
 	key, _ := store.NewKey("wat")
-	s.put(key, expected)
+	s.Put(key, expected)
 	w := httptest.NewRecorder()
 	lnk, _ := url.Parse("http://localhost/?key=" + key.String())
 	s.Handle(w, &http.Request{

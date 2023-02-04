@@ -71,7 +71,7 @@ func (x *Storage) handleGet(key *store.Key, w http.ResponseWriter, r *http.Reque
 	}
 
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "%s", value)
+	fmt.Fprintf(w, "%s", value.Value())
 }
 
 func (x *Storage) handlePost(key *store.Key, w http.ResponseWriter, r *http.Request) {
