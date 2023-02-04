@@ -3,6 +3,7 @@ package main
 import (
 	"disco/network"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"time"
 )
@@ -27,7 +28,11 @@ func main() {
 				fmt.Println(err)
 				panic("wat")
 			}
-			fmt.Println("client status:", r.StatusCode)
+			resp, _ := ioutil.ReadAll(r.Body)
+			r.Body.Close()
+
+			fmt.Printf("[%v]: %s\n",
+				r.StatusCode, resp)
 		}
 	}
 }
