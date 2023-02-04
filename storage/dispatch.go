@@ -118,5 +118,5 @@ func (x *Dispatch) getInstance(key *store.Key) string {
 			return instances[idx]
 		}
 	}
-	panic("GTFO")
+	panic("Unable to map instance to key")
 }

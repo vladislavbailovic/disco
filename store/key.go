@@ -32,13 +32,13 @@ func (x Key) isValid() bool {
 }
 
 func isAlnum(c byte) bool {
-	if c >= KeyspaceDigit.Min && c <= KeyspaceDigit.Max {
+	if KeyspaceDigit.contains(c) {
 		return true
 	}
-	if c >= KeyspaceLowercase.Min && c <= KeyspaceLowercase.Max {
+	if KeyspaceLowercase.contains(c) {
 		return true
 	}
-	if c >= KeyspaceUppercase.Min && c <= KeyspaceUppercase.Max {
+	if KeyspaceUppercase.contains(c) {
 		return true
 	}
 	return false
@@ -52,15 +52,19 @@ func isAlnumDash(c byte) bool {
 }
 
 type Keyspace struct {
-	Min uint8
-	Max uint8
+	min uint8
+	max uint8
 }
 
 func (x Keyspace) InKeyspace(key *Key) bool {
 	if key == nil {
 		return false
 	}
-	if (*key)[0] >= x.Min && (*key)[0] <= x.Max {
+	return x.contains((*key)[0])
+}
+
+func (x Keyspace) contains(c byte) bool {
+	if c >= x.min && c <= x.max {
 		return true
 	}
 	return false
@@ -68,24 +72,24 @@ func (x Keyspace) InKeyspace(key *Key) bool {
 
 func (x Keyspace) GetPosition(key *Key) int {
 	first := (*key)[0]
-	return int((first - x.Min + 1) - 1)
+	return int((first - x.min + 1) - 1)
 }
 
 func (x Keyspace) GetRange() int {
-	return int(x.Max - x.Min + 1)
+	return int(x.max - x.min + 1)
 }
 
 var KeyspaceDigit Keyspace = Keyspace{
-	Min: uint8('0'),
-	Max: uint8('9'),
+	min: uint8('0'),
+	max: uint8('9'),
 }
 var KeyspaceLowercase Keyspace = Keyspace{
-	Min: uint8('a'),
-	Max: uint8('z'),
+	min: uint8('a'),
+	max: uint8('z'),
 }
 var KeyspaceUppercase Keyspace = Keyspace{
-	Min: uint8('A'),
-	Max: uint8('Z'),
+	min: uint8('A'),
+	max: uint8('Z'),
 }
 var Keyspaces []Keyspace = []Keyspace{
 	KeyspaceDigit,
