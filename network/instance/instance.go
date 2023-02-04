@@ -1,4 +1,4 @@
-package storage
+package instance
 
 import (
 	"disco/network"
@@ -6,25 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strings"
 )
-
-type StorageConfig struct {
-	Addr         string
-	Port         string
-	StoragePath  string
-	DispatchPath string
-}
-
-func NewStorageConfig(base, addr string) StorageConfig {
-	split := strings.SplitN(addr, ":", 2)
-	return StorageConfig{
-		Addr:         addr,
-		Port:         split[1],
-		DispatchPath: "/" + base,
-		StoragePath:  "/_" + base,
-	}
-}
 
 type Storage struct {
 	store.Storer

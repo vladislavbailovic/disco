@@ -1,4 +1,4 @@
-package storage
+package relay
 
 import (
 	"disco/network"
@@ -14,7 +14,7 @@ import (
 )
 
 func TestDispatch_ErrorsOnNilPeers(t *testing.T) {
-	d := NewDispatch(nil, NewStorageConfig("storage", ":6660"))
+	d := NewDispatch(nil, network.NewConfig("storage", ":6660"))
 	w := httptest.NewRecorder()
 	d.Handle(w, nil)
 	if w.Code != http.StatusInternalServerError {
@@ -23,7 +23,7 @@ func TestDispatch_ErrorsOnNilPeers(t *testing.T) {
 }
 
 func TestDispatch_ErrorsOnPeersInit(t *testing.T) {
-	d := NewDispatch(network.NewPeers(), NewStorageConfig("storage", ":6660"))
+	d := NewDispatch(network.NewPeers(), network.NewConfig("storage", ":6660"))
 	w := httptest.NewRecorder()
 	d.Handle(w, nil)
 	if w.Code != http.StatusInternalServerError {
@@ -42,7 +42,7 @@ func TestDispatch_InstanceGetting(t *testing.T) {
 	p := network.NewPeers()
 	p.Confirm("test1", "test2")
 
-	d := NewDispatch(p, NewStorageConfig("storage", ":6660"))
+	d := NewDispatch(p, network.NewConfig("storage", ":6660"))
 	suite := map[string]string{
 		"AAA": "test1",
 		"aaa": "test1",
@@ -69,7 +69,7 @@ func TestDispatch_InstanceUrlGetting(t *testing.T) {
 	p := network.NewPeers()
 	p.Confirm("test1", "test2")
 
-	d := NewDispatch(p, NewStorageConfig("storage", ":6660"))
+	d := NewDispatch(p, network.NewConfig("storage", ":6660"))
 	suite := map[string]struct {
 		host  string
 		query string
@@ -104,7 +104,7 @@ func TestDispatch_NoKey(t *testing.T) {
 	p.Confirm("test1", "test2")
 	p.SetReady(true)
 
-	d := NewDispatch(p, NewStorageConfig("storage", ":6660"))
+	d := NewDispatch(p, network.NewConfig("storage", ":6660"))
 	w := httptest.NewRecorder()
 	lnk, _ := url.Parse("http://localhost/")
 	d.Handle(w, &http.Request{
@@ -120,7 +120,7 @@ func TestDispatch_ErrorsWithNoStorageServer(t *testing.T) {
 	p.Confirm("test1", "test2")
 	p.SetReady(true)
 
-	d := NewDispatch(p, NewStorageConfig("storage", ":6660"))
+	d := NewDispatch(p, network.NewConfig("storage", ":6660"))
 	d.client = &http.Client{
 		Timeout: time.Millisecond,
 	}
@@ -158,7 +158,7 @@ func TestDispatch_HappyPath(t *testing.T) {
 	p.Confirm(host, "test2")
 	p.SetReady(true)
 
-	d := NewDispatch(p, NewStorageConfig("storage", ":6660"))
+	d := NewDispatch(p, network.NewConfig("storage", ":6660"))
 	d.storagePort = port
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(

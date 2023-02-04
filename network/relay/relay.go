@@ -1,4 +1,4 @@
-package storage
+package relay
 
 import (
 	"bytes"
@@ -19,10 +19,10 @@ type Dispatch struct {
 	storagePort     string
 }
 
-func NewDispatch(peers *network.Peers, cfg StorageConfig) *Dispatch {
+func NewDispatch(peers *network.Peers, cfg network.Config) *Dispatch {
 	return &Dispatch{
 		peers:           peers,
-		storageEndpoint: cfg.StoragePath,
+		storageEndpoint: cfg.InstancePath,
 		storagePort:     cfg.Port,
 		client: &http.Client{
 			Timeout: 1 * time.Second,

@@ -3,7 +3,8 @@ package main
 import (
 	"bytes"
 	"disco/network"
-	"disco/storage"
+	"disco/network/instance"
+	"disco/network/relay"
 	"disco/store"
 	"fmt"
 	"io/ioutil"
@@ -15,12 +16,13 @@ import (
 
 func main() {
 	store := store.NewPlainStore()
+	cfg := network.NewConfig("storage", ":6660")
+
 	peers := network.Autodiscover("storage-one")
-	cfg := storage.NewStorageConfig("storage", ":6660")
-	dispatchHandler := storage.NewDispatch(peers, cfg)
-	storageHandler := storage.NewStorage(store)
-	http.HandleFunc(cfg.DispatchPath, dispatchHandler.Handle)
-	http.HandleFunc(cfg.StoragePath, storageHandler.Handle)
+	dispatchHandler := relay.NewDispatch(peers, cfg)
+	storageHandler := instance.NewStorage(store)
+	http.HandleFunc(cfg.RelayPath, dispatchHandler.Handle)
+	http.HandleFunc(cfg.InstancePath, storageHandler.Handle)
 	go http.ListenAndServe(cfg.Addr, nil)
 
 	t := time.Tick(time.Second * 5)
