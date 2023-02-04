@@ -14,9 +14,9 @@ import (
 
 func main() {
 	peers := network.Autodiscover("storage-one")
-	cfg := storage.NewStoreConfig("storage", ":6660")
+	cfg := storage.NewStorageConfig("storage", ":6660")
 	dispatch := storage.NewDispatch(peers, cfg)
-	store := storage.NewStore()
+	store := storage.NewStorage()
 	http.HandleFunc(cfg.DispatchPath, dispatch.Handle)
 	http.HandleFunc(cfg.StoragePath, store.Handle)
 	go http.ListenAndServe(cfg.Addr, nil)
