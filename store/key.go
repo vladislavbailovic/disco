@@ -72,11 +72,11 @@ func (x Keyspace) contains(c byte) bool {
 
 func (x Keyspace) GetPosition(key *Key) int {
 	first := (*key)[0]
-	return int((first - x.min + 1) - 1)
+	return int(first-x.min) + 1
 }
 
 func (x Keyspace) GetRange() int {
-	return int(x.max - x.min + 1)
+	return int(x.max-x.min) + 1
 }
 
 var KeyspaceDigit Keyspace = Keyspace{

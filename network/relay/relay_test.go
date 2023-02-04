@@ -67,17 +67,20 @@ func TestDispatch_InstanceGetting(t *testing.T) {
 
 func TestDispatch_InstanceUrlGetting(t *testing.T) {
 	p := network.NewPeers()
-	p.Confirm("test1", "test2")
+	p.Confirm("test1", "test2", "test3")
 
 	d := NewDispatch(p, network.NewConfig("storage", ":6660"))
 	suite := map[string]struct {
 		host  string
 		query string
 	}{
+		"000": {host: "test1:6660", query: "000"},
+		"555": {host: "test2:6660", query: "555"},
+		"999": {host: "test3:6660", query: "999"},
 		"AAA": {host: "test1:6660", query: "AAA"},
 		"aaa": {host: "test1:6660", query: "aaa"},
-		"ZZZ": {host: "test2:6660", query: "ZZZ"},
-		"zzz": {host: "test2:6660", query: "zzz"},
+		"ZZZ": {host: "test3:6660", query: "ZZZ"},
+		"zzz": {host: "test3:6660", query: "zzz"},
 	}
 	for test, want := range suite {
 		t.Run(test, func(t *testing.T) {

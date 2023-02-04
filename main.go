@@ -26,10 +26,11 @@ func main() {
 	go http.ListenAndServe(cfg.Addr, nil)
 
 	t := time.Tick(time.Second * 5)
+	count := 0
 	for {
 		select {
 		case <-t:
-			r, err := http.Get("http://localhost:6660/storage?key=AAA")
+			r, err := http.Get("http://localhost:6660/storage?key=ZZZ")
 			if err != nil {
 				fmt.Println(err)
 				panic("wat")
@@ -37,11 +38,15 @@ func main() {
 			resp, _ := ioutil.ReadAll(r.Body)
 			r.Body.Close()
 
-			fmt.Printf("[%v] GET: %s\n",
-				r.StatusCode, resp)
+			fmt.Printf("[%v] GET: %s (peers: %d)\n",
+				r.StatusCode, resp, len(peers.Get()))
 
 			if r.StatusCode != http.StatusOK {
-				r, err = http.Post("http://localhost:6660/storage?key=AAA", "text/plain", bytes.NewBuffer([]byte("Yo")))
+				count += 1
+				if count < 3 {
+					continue
+				}
+				r, err = http.Post("http://localhost:6660/storage?key=ZZZ", "text/plain", bytes.NewBuffer([]byte("Yo")))
 				if err != nil {
 					fmt.Println(err)
 					panic("wat")

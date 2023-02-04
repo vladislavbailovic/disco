@@ -14,7 +14,7 @@ func NewConfig(base, addr string) Config {
 	return Config{
 		Addr:         addr,
 		Port:         split[1],
-		InstancePath: "/" + base,
-		RelayPath:    "/_" + base,
+		RelayPath:    "/" + base,
+		InstancePath: "/_" + base,
 	}
 }

@@ -115,6 +115,9 @@ func (x *Dispatch) getInstance(key *store.Key) string {
 		if keyspace.InKeyspace(key) {
 			stride := keyspace.GetRange() / len(instances)
 			idx := keyspace.GetPosition(key) / stride
+			if idx > 0 {
+				idx -= 1
+			}
 			return instances[idx]
 		}
 	}
