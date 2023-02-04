@@ -3,7 +3,6 @@ package main
 import (
 	"disco/network"
 	"fmt"
-	"io"
 	"net/http"
 	"time"
 )
@@ -12,7 +11,8 @@ import (
 
 func main() {
 	peers := network.Autodiscover("storage-one")
-	http.HandleFunc("/storage", handleDispatch(peers))
+	dispatch := NewDispatch(peers)
+	http.HandleFunc("/storage", dispatch.handle)
 	http.HandleFunc("/_storage", handleStorage)
 	go http.ListenAndServe(":6660", nil)
 
@@ -32,35 +32,6 @@ func main() {
 
 func handleStorage(http.ResponseWriter, *http.Request) {
 	fmt.Println(network.GetOutboundIP(), "gets key from storage")
-}
-
-func handleDispatch(peers *network.Peers) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if peers.Status() != network.Ready {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(peers.Status().String()))
-			return
-		}
-
-		key := r.URL.Query()["key"][0]
-		fmt.Println("Requested", key)
-		instance := getInstance(key, peers)
-		fmt.Println(network.GetOutboundIP(), "peers:", peers.Status(), peers.Get())
-		requestUrl := "http://" + instance + ":6660/_storage"
-		fmt.Println("Gonna ask instance", requestUrl+"?key="+key)
-
-		resp, err := http.Get(requestUrl + "?key=" + key)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
-			return
-		}
-		fmt.Println("instance responded with", resp.StatusCode)
-		w.WriteHeader(resp.StatusCode)
-
-		defer r.Body.Close()
-		io.Copy(w, r.Body)
-	}
 }
 
 func getInstance(key string, peers *network.Peers) string {

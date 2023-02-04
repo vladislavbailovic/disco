@@ -1,159 +1,40 @@
 package main
 
+import (
+	"disco/network"
+	"fmt"
+	"net/http"
+	"time"
+)
+
 /// diskey: Distributed in-memory key-value storage
 
-import (
-	"encoding/json"
-	"fmt"
-	"io"
-	"io/ioutil"
-	"net/http"
-	"net/url"
-	"os"
-	"path"
-	"strings"
-)
-
-var (
-	DefaultPort  string = "6660"
-	DispatchMode string = "dispatch"
-	StorageMode  string = "storage"
-)
-
-var _port string = DefaultPort
-
 func main() {
-	mode := DispatchMode
-	if len(os.Args) > 1 && (os.Args[1] == DispatchMode || os.Args[1] == StorageMode) {
-		mode = os.Args[1]
+	peers := network.Autodiscover("storage-one")
+	dispatch := NewDispatch(peers)
+	http.HandleFunc("/storage", dispatch.handle)
+	http.HandleFunc("/_storage", handleStorage)
+	go http.ListenAndServe(":6660", nil)
+
+	t := time.Tick(time.Second * 5)
+	for {
+		select {
+		case <-t:
+			r, err := http.Get("http://localhost:6660/storage?key=AAA")
+			if err != nil {
+				fmt.Println(err)
+				panic("wat")
+			}
+			fmt.Println("client status:", r.StatusCode)
+		}
 	}
-	if len(os.Args) > 2 {
-		_port = os.Args[2]
-	}
-	fmt.Println("yo", _port, mode)
-
-	if mode == DispatchMode {
-		http.HandleFunc("/", handleDispatch)
-	} else {
-		http.HandleFunc("/", handleStore)
-	}
-	http.ListenAndServe(":"+_port, nil)
 }
 
-func handleDispatch(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		key := strings.Trim(r.URL.String(), "/")
-
-		instance := getInstance(key)
-		instanceUrl, err := url.Parse("http://localhost" + instance)
-		if err != nil {
-			serverError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-		url := path.Join(instanceUrl.String(), key)
-
-		resp, err := http.Get(url)
-		if err != nil {
-			serverError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-		if resp.StatusCode != http.StatusOK {
-			serverError(w, http.StatusInternalServerError, resp.Status)
-			return
-		}
-		defer resp.Body.Close()
-		io.Copy(w, resp.Body)
-		return
-	case http.MethodPost:
-		key := strings.Trim(r.URL.String(), "/")
-
-		instance := getInstance(key)
-		instanceUrl, err := url.Parse("http://localhost" + instance)
-		if err != nil {
-			serverError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-		url := path.Join(instanceUrl.String(), key)
-
-		defer r.Body.Close()
-		req, err := http.NewRequest(http.MethodPost, url, r.Body)
-		if err != nil {
-			serverError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-		resp, err := http.DefaultClient.Do(req)
-		if err != nil {
-			serverError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-		if resp.StatusCode != http.StatusOK {
-			serverError(w, http.StatusInternalServerError, "NOT 200OK: "+resp.Status)
-			return
-		}
-		defer resp.Body.Close()
-		io.Copy(w, resp.Body)
-		return
-	}
-
-	serverError(w, http.StatusBadRequest, "Bad Request")
+func handleStorage(http.ResponseWriter, *http.Request) {
+	fmt.Println(network.GetOutboundIP(), "gets key from storage")
 }
 
-func handleStore(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		key := strings.Trim(r.URL.String(), "/")
-		v, err := getStored(key)
-		if err != nil {
-			serverError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-		if v == "" {
-			serverError(w, http.StatusNotFound, "Not Found")
-			return
-		}
-		respond(w, http.StatusOK, v)
-		return
-	case http.MethodPost:
-		key := strings.Trim(r.URL.String(), "/")
-		defer r.Body.Close()
-		value, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			serverError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		if err := setStored(key, string(value)); err != nil {
-			serverError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		respond(w, http.StatusOK, "stored")
-		return
-	}
-
-	serverError(w, http.StatusBadRequest, "Bad Request")
-}
-
-func serverError(w http.ResponseWriter, code int, msg string) {
-	respond(w, code, ResponseError{Msg: msg})
-}
-
-func respond(w http.ResponseWriter, code int, msg any) {
-	w.WriteHeader(code)
-	json.NewEncoder(w).Encode(msg)
-}
-
-type ResponseError struct{ Msg string }
-
-var _instances = []string{
-	":6661",
-	":6662",
-	":6663",
-	":6664",
-}
-
-func getInstance(key string) string {
+func getInstance(key string, peers *network.Peers) string {
 	keyspaces := []struct {
 		min, max int
 	}{
@@ -161,14 +42,15 @@ func getInstance(key string) string {
 		{min: int('A'), max: int('Z')},
 		{min: int('a'), max: int('z')},
 	}
+	instances := peers.Get()
 	for _, keyspace := range keyspaces {
 		test := int(key[0])
 		if test >= keyspace.min && test <= keyspace.max {
 			total := keyspace.max - keyspace.min + 1
 			test -= keyspace.min + 1
-			stride := total / len(_instances)
+			stride := total / len(instances)
 			idx := (test - 1) / stride
-			return _instances[idx]
+			return instances[idx]
 		}
 	}
 	panic("GTFO")
@@ -181,6 +63,6 @@ func getStored(key string) (string, error) {
 }
 
 func setStored(key, value string) error {
-	_storage[key] = _port + value
+	_storage[key] = "STORED " + value
 	return nil
 }
