@@ -118,7 +118,8 @@ func TestDispatch_ErrorsWithNoStorageServer(t *testing.T) {
 	w := httptest.NewRecorder()
 	lnk, _ := url.Parse("http://whatever-fake-host/?key=AAA")
 	d.handle(w, &http.Request{
-		URL: lnk,
+		URL:    lnk,
+		Method: http.MethodGet,
 	})
 	if w.Code != http.StatusInternalServerError {
 		t.Errorf("expected Err500 on transport error")

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"disco/network"
 	"fmt"
 	"io/ioutil"
@@ -31,8 +32,19 @@ func main() {
 			resp, _ := ioutil.ReadAll(r.Body)
 			r.Body.Close()
 
-			fmt.Printf("[%v]: %s\n",
+			fmt.Printf("[%v] GET: %s\n",
 				r.StatusCode, resp)
+
+			if r.StatusCode != http.StatusOK {
+				r, err = http.Post("http://localhost:6660/storage?key=AAA", "text/plain", bytes.NewBuffer([]byte("Yo")))
+				if err != nil {
+					fmt.Println(err)
+					panic("wat")
+				}
+
+				fmt.Printf("[%v] POST: %s\n",
+					r.StatusCode, resp)
+			}
 		}
 	}
 }

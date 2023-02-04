@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"disco/network"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"time"
@@ -47,7 +49,42 @@ func (x *Dispatch) handle(w http.ResponseWriter, r *http.Request) {
 		network.GetOutboundIP(),
 		reqUrl.String())
 
+	switch r.Method {
+	case http.MethodGet:
+		x.handleGet(reqUrl, w, r)
+		return
+	case http.MethodPost:
+		x.handlePost(reqUrl, w, r)
+		return
+	}
+
+	w.WriteHeader(http.StatusBadRequest)
+}
+
+func (x *Dispatch) handleGet(reqUrl url.URL, w http.ResponseWriter, r *http.Request) {
 	resp, err := x.client.Get(reqUrl.String())
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	w.WriteHeader(resp.StatusCode)
+
+	defer resp.Body.Close()
+	io.Copy(w, resp.Body)
+}
+
+func (x *Dispatch) handlePost(reqUrl url.URL, w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	value, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	resp, err := x.client.Post(
+		reqUrl.String(), "text/plain", bytes.NewBuffer(value))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
