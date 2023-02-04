@@ -3,6 +3,7 @@ package storage
 import (
 	"bytes"
 	"disco/network"
+	"disco/store"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -18,7 +19,7 @@ type Dispatch struct {
 	storagePort     string
 }
 
-func NewDispatch(peers *network.Peers, cfg StoreConfig) *Dispatch {
+func NewDispatch(peers *network.Peers, cfg StorageConfig) *Dispatch {
 	return &Dispatch{
 		peers:           peers,
 		storageEndpoint: cfg.StoragePath,
@@ -38,9 +39,10 @@ func (x *Dispatch) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	key := r.URL.Query().Get("key")
-	if key == "" {
+	key, err := store.NewKey(r.URL.Query().Get("key"))
+	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, err.Error())
 		return
 	}
 
@@ -97,32 +99,22 @@ func (x *Dispatch) handlePost(reqUrl url.URL, w http.ResponseWriter, r *http.Req
 	io.Copy(w, resp.Body)
 }
 
-func (x *Dispatch) getInstanceURL(key string) url.URL {
+func (x *Dispatch) getInstanceURL(key *store.Key) url.URL {
 	instance := x.getInstance(key)
 	return url.URL{
 		Scheme:   "http",
 		Host:     instance + ":" + x.storagePort,
 		Path:     x.storageEndpoint,
-		RawQuery: "key=" + url.QueryEscape(key),
+		RawQuery: "key=" + url.QueryEscape(key.String()),
 	}
 }
 
-func (x *Dispatch) getInstance(key string) string {
-	keyspaces := []struct {
-		min, max int
-	}{
-		{min: int('0'), max: int('9')},
-		{min: int('A'), max: int('Z')},
-		{min: int('a'), max: int('z')},
-	}
+func (x *Dispatch) getInstance(key *store.Key) string {
 	instances := x.peers.Get()
-	for _, keyspace := range keyspaces {
-		test := int(key[0])
-		if test >= keyspace.min && test <= keyspace.max {
-			total := keyspace.max - keyspace.min + 1
-			test -= keyspace.min + 1
-			stride := total / len(instances)
-			idx := (test - 1) / stride
+	for _, keyspace := range store.Keyspaces {
+		if keyspace.InKeyspace(key) {
+			stride := keyspace.GetRange() / len(instances)
+			idx := keyspace.GetPosition(key) / stride
 			return instances[idx]
 		}
 	}

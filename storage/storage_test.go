@@ -2,6 +2,7 @@ package storage
 
 import (
 	"bytes"
+	"disco/store"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -9,27 +10,29 @@ import (
 	"testing"
 )
 
-func TestStore_FetchError(t *testing.T) {
-	s := NewStore()
-	if _, err := s.fetch("test"); err == nil {
+func TestStorage_FetchError(t *testing.T) {
+	s := NewStorage()
+	key, _ := store.NewKey("test")
+	if _, err := s.fetch(key); err == nil {
 		t.Error("expected error")
 	} else if "unknown key: \"test\"" != err.Error() {
 		t.Errorf("unexpected error: %q", err)
 	}
 }
 
-func TestStore_FetchPut(t *testing.T) {
-	s := NewStore()
-	s.put("test", "wat")
-	if v, err := s.fetch("test"); err != nil {
+func TestStorage_FetchPut(t *testing.T) {
+	s := NewStorage()
+	key, _ := store.NewKey("test")
+	s.put(key, "wat")
+	if v, err := s.fetch(key); err != nil {
 		t.Errorf("unexpected error: %q", err)
 	} else if v != "wat" {
 		t.Errorf("unexpected value: %q", v)
 	}
 }
 
-func TestStore_NoKey(t *testing.T) {
-	s := NewStore()
+func TestStorage_NoKey(t *testing.T) {
+	s := NewStorage()
 	w := httptest.NewRecorder()
 	lnk, _ := url.Parse("http://localhost/")
 	s.Handle(w, &http.Request{
@@ -41,8 +44,8 @@ func TestStore_NoKey(t *testing.T) {
 	}
 }
 
-func TestStore_MissingKey(t *testing.T) {
-	s := NewStore()
+func TestStorage_MissingKey(t *testing.T) {
+	s := NewStorage()
 	w := httptest.NewRecorder()
 	lnk, _ := url.Parse("http://localhost/?key=wat")
 	s.Handle(w, &http.Request{
@@ -61,12 +64,13 @@ func TestStore_MissingKey(t *testing.T) {
 	}
 }
 
-func TestStore_HappyPath(t *testing.T) {
-	s := NewStore()
+func TestStorage_HappyPath(t *testing.T) {
+	s := NewStorage()
 	expected := "YAY this is the proper value"
-	s.put("wat", expected)
+	key, _ := store.NewKey("wat")
+	s.put(key, expected)
 	w := httptest.NewRecorder()
-	lnk, _ := url.Parse("http://localhost/?key=wat")
+	lnk, _ := url.Parse("http://localhost/?key=" + key.String())
 	s.Handle(w, &http.Request{
 		URL:    lnk,
 		Method: http.MethodGet,
@@ -83,8 +87,8 @@ func TestStore_HappyPath(t *testing.T) {
 	}
 }
 
-func TestStore_HappyPathRoundtrip(t *testing.T) {
-	s := NewStore()
+func TestStorage_HappyPathRoundtrip(t *testing.T) {
+	s := NewStorage()
 	expected := "YAY this is the proper value"
 	lnk, _ := url.Parse("http://localhost/?key=wat")
 

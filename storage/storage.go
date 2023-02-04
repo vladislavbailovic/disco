@@ -2,6 +2,7 @@ package storage
 
 import (
 	"disco/network"
+	"disco/store"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -9,16 +10,16 @@ import (
 	"sync"
 )
 
-type StoreConfig struct {
+type StorageConfig struct {
 	Addr         string
 	Port         string
 	StoragePath  string
 	DispatchPath string
 }
 
-func NewStoreConfig(base, addr string) StoreConfig {
+func NewStorageConfig(base, addr string) StorageConfig {
 	split := strings.SplitN(addr, ":", 2)
-	return StoreConfig{
+	return StorageConfig{
 		Addr:         addr,
 		Port:         split[1],
 		DispatchPath: "/" + base,
@@ -26,21 +27,22 @@ func NewStoreConfig(base, addr string) StoreConfig {
 	}
 }
 
-type Store struct {
+type Storage struct {
 	lock  sync.RWMutex
 	store map[string]string
 }
 
-func NewStore() *Store {
-	return &Store{
+func NewStorage() *Storage {
+	return &Storage{
 		store: map[string]string{},
 	}
 }
 
-func (x *Store) Handle(w http.ResponseWriter, r *http.Request) {
-	key := r.URL.Query().Get("key")
-	if key == "" {
+func (x *Storage) Handle(w http.ResponseWriter, r *http.Request) {
+	key, err := store.NewKey(r.URL.Query().Get("key"))
+	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, err.Error())
 		return
 	}
 
@@ -56,7 +58,7 @@ func (x *Store) Handle(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusBadRequest)
 }
 
-func (x *Store) handleGet(key string, w http.ResponseWriter, r *http.Request) {
+func (x *Storage) handleGet(key *store.Key, w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("[%v]: gets key %q from storage\n",
 		network.GetOutboundIP(), key)
 
@@ -71,7 +73,7 @@ func (x *Store) handleGet(key string, w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "%s", value)
 }
 
-func (x *Store) handlePost(key string, w http.ResponseWriter, r *http.Request) {
+func (x *Storage) handlePost(key *store.Key, w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("[%v]: sets key %q in storage\n",
 		network.GetOutboundIP(), key)
 
@@ -86,19 +88,19 @@ func (x *Store) handlePost(key string, w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (x *Store) fetch(key string) (string, error) {
+func (x *Storage) fetch(key *store.Key) (string, error) {
 	x.lock.RLock()
 	defer x.lock.RUnlock()
 
-	if val, ok := x.store[key]; ok {
+	if val, ok := x.store[key.String()]; ok {
 		return val, nil
 	}
 	return "", fmt.Errorf("unknown key: %q", key)
 }
 
-func (x *Store) put(key, val string) {
+func (x *Storage) put(key *store.Key, val string) {
 	x.lock.Lock()
 	defer x.lock.Unlock()
 
-	x.store[key] = val
+	x.store[key.String()] = val
 }
