@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
-	"sync"
 )
 
 type StorageConfig struct {
@@ -28,8 +27,7 @@ func NewStorageConfig(base, addr string) StorageConfig {
 }
 
 type Storage struct {
-	lock  sync.RWMutex
-	store store.Storer
+	store.Storer
 }
 
 func NewStorage(str store.Storer) *Storage {
@@ -37,7 +35,7 @@ func NewStorage(str store.Storer) *Storage {
 		str = store.Default()
 	}
 	return &Storage{
-		store: str,
+		Storer: str,
 	}
 }
 
@@ -65,7 +63,7 @@ func (x *Storage) handleGet(key *store.Key, w http.ResponseWriter, r *http.Reque
 	fmt.Printf("[%v]: gets key %q from storage\n",
 		network.GetOutboundIP(), key)
 
-	value, err := x.fetch(key)
+	value, err := x.Fetch(key)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprintf(w, "%s", err)
@@ -87,25 +85,6 @@ func (x *Storage) handlePost(key *store.Key, w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	x.put(key, string(value))
+	x.Put(key, string(value))
 	w.WriteHeader(http.StatusOK)
-}
-
-func (x *Storage) fetch(key *store.Key) (string, error) {
-	x.lock.RLock()
-	defer x.lock.RUnlock()
-
-	if val, err := x.store.Fetch(key); err != nil {
-		return "", err
-	} else {
-		return val, nil
-	}
-	return "", fmt.Errorf("unknown key: %q", key)
-}
-
-func (x *Storage) put(key *store.Key, val string) {
-	x.lock.Lock()
-	defer x.lock.Unlock()
-
-	x.store.Put(key, val)
 }

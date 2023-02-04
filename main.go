@@ -13,7 +13,7 @@ import (
 
 /// diskey: Distributed in-memory key-value storage
 
-func main() {
+func main2() {
 	store := store.NewPlainStore()
 	peers := network.Autodiscover("storage-one")
 	cfg := storage.NewStorageConfig("storage", ":6660")
