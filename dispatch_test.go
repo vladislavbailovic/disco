@@ -13,7 +13,7 @@ import (
 )
 
 func TestDispatch_ErrorsOnNilPeers(t *testing.T) {
-	d := NewDispatch(nil)
+	d := NewDispatch(nil, NewStoreConfig("storage", ":6660"))
 	w := httptest.NewRecorder()
 	d.handle(w, nil)
 	if w.Code != http.StatusInternalServerError {
@@ -22,7 +22,7 @@ func TestDispatch_ErrorsOnNilPeers(t *testing.T) {
 }
 
 func TestDispatch_ErrorsOnPeersInit(t *testing.T) {
-	d := NewDispatch(network.NewPeers())
+	d := NewDispatch(network.NewPeers(), NewStoreConfig("storage", ":6660"))
 	w := httptest.NewRecorder()
 	d.handle(w, nil)
 	if w.Code != http.StatusInternalServerError {
@@ -41,7 +41,7 @@ func TestDispatch_InstanceGetting(t *testing.T) {
 	p := network.NewPeers()
 	p.Confirm("test1", "test2")
 
-	d := NewDispatch(p)
+	d := NewDispatch(p, NewStoreConfig("storage", ":6660"))
 	suite := map[string]string{
 		"AAA": "test1",
 		"aaa": "test1",
@@ -63,7 +63,7 @@ func TestDispatch_InstanceUrlGetting(t *testing.T) {
 	p := network.NewPeers()
 	p.Confirm("test1", "test2")
 
-	d := NewDispatch(p)
+	d := NewDispatch(p, NewStoreConfig("storage", ":6660"))
 	suite := map[string]struct {
 		host  string
 		query string
@@ -95,7 +95,7 @@ func TestDispatch_NoKey(t *testing.T) {
 	p.Confirm("test1", "test2")
 	p.SetReady(true)
 
-	d := NewDispatch(p)
+	d := NewDispatch(p, NewStoreConfig("storage", ":6660"))
 	w := httptest.NewRecorder()
 	lnk, _ := url.Parse("http://localhost/")
 	d.handle(w, &http.Request{
@@ -111,7 +111,7 @@ func TestDispatch_ErrorsWithNoStorageServer(t *testing.T) {
 	p.Confirm("test1", "test2")
 	p.SetReady(true)
 
-	d := NewDispatch(p)
+	d := NewDispatch(p, NewStoreConfig("storage", ":6660"))
 	d.client = &http.Client{
 		Timeout: time.Millisecond,
 	}
@@ -148,7 +148,7 @@ func TestDispatch_HappyPath(t *testing.T) {
 	p.Confirm(host, "test2")
 	p.SetReady(true)
 
-	d := NewDispatch(p)
+	d := NewDispatch(p, NewStoreConfig("storage", ":6660"))
 	d.storagePort = port
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(

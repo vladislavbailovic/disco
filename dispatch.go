@@ -16,11 +16,11 @@ type Dispatch struct {
 	storagePort     string
 }
 
-func NewDispatch(peers *network.Peers) *Dispatch {
+func NewDispatch(peers *network.Peers, cfg StoreConfig) *Dispatch {
 	return &Dispatch{
 		peers:           peers,
-		storageEndpoint: "_storage",
-		storagePort:     "6660",
+		storageEndpoint: cfg.storagePath,
+		storagePort:     cfg.port,
 		client: &http.Client{
 			Timeout: 1 * time.Second,
 		},

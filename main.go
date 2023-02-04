@@ -11,10 +11,12 @@ import (
 
 func main() {
 	peers := network.Autodiscover("storage-one")
-	dispatch := NewDispatch(peers)
-	http.HandleFunc("/storage", dispatch.handle)
-	http.HandleFunc("/_storage", handleStorage)
-	go http.ListenAndServe(":6660", nil)
+	cfg := NewStoreConfig("storage", ":6660")
+	dispatch := NewDispatch(peers, cfg)
+	store := NewStore()
+	http.HandleFunc(cfg.dispatchPath, dispatch.handle)
+	http.HandleFunc(cfg.storagePath, store.handle)
+	go http.ListenAndServe(cfg.addr, nil)
 
 	t := time.Tick(time.Second * 5)
 	for {
@@ -28,19 +30,4 @@ func main() {
 			fmt.Println("client status:", r.StatusCode)
 		}
 	}
-}
-
-func handleStorage(http.ResponseWriter, *http.Request) {
-	fmt.Println(network.GetOutboundIP(), "gets key from storage")
-}
-
-var _storage map[string]string = make(map[string]string)
-
-func getStored(key string) (string, error) {
-	return _storage[key], nil
-}
-
-func setStored(key, value string) error {
-	_storage[key] = "STORED " + value
-	return nil
 }
