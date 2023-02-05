@@ -12,15 +12,15 @@ import (
 	"time"
 )
 
-type Dispatch struct {
+type Relay struct {
 	peers           *network.Peers
 	client          *http.Client
 	storageEndpoint string
 	storagePort     string
 }
 
-func NewDispatch(peers *network.Peers, cfg network.Config) *Dispatch {
-	return &Dispatch{
+func NewRelay(peers *network.Peers, cfg network.Config) *Relay {
+	return &Relay{
 		peers:           peers,
 		storageEndpoint: cfg.InstancePath,
 		storagePort:     cfg.Port,
@@ -30,7 +30,7 @@ func NewDispatch(peers *network.Peers, cfg network.Config) *Dispatch {
 	}
 }
 
-func (x *Dispatch) Handle(w http.ResponseWriter, r *http.Request) {
+func (x *Relay) Handle(w http.ResponseWriter, r *http.Request) {
 	if x.peers == nil || x.peers.Status() != network.Ready {
 		w.WriteHeader(http.StatusInternalServerError)
 		if x.peers != nil {
@@ -63,7 +63,7 @@ func (x *Dispatch) Handle(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusBadRequest)
 }
 
-func (x *Dispatch) handleGet(reqUrl url.URL, w http.ResponseWriter, r *http.Request) {
+func (x *Relay) handleGet(reqUrl url.URL, w http.ResponseWriter, r *http.Request) {
 	resp, err := x.client.Get(reqUrl.String())
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -77,7 +77,7 @@ func (x *Dispatch) handleGet(reqUrl url.URL, w http.ResponseWriter, r *http.Requ
 	io.Copy(w, resp.Body)
 }
 
-func (x *Dispatch) handlePost(reqUrl url.URL, w http.ResponseWriter, r *http.Request) {
+func (x *Relay) handlePost(reqUrl url.URL, w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	value, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -99,7 +99,7 @@ func (x *Dispatch) handlePost(reqUrl url.URL, w http.ResponseWriter, r *http.Req
 	io.Copy(w, resp.Body)
 }
 
-func (x *Dispatch) getInstanceURL(key *store.Key) url.URL {
+func (x *Relay) getInstanceURL(key *store.Key) url.URL {
 	instance := x.getInstance(key)
 	return url.URL{
 		Scheme:   "http",
@@ -109,7 +109,7 @@ func (x *Dispatch) getInstanceURL(key *store.Key) url.URL {
 	}
 }
 
-func (x *Dispatch) getInstance(key *store.Key) string {
+func (x *Relay) getInstance(key *store.Key) string {
 	instances := x.peers.Get()
 	for _, keyspace := range store.Keyspaces {
 		if keyspace.InKeyspace(key) {

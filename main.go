@@ -19,9 +19,9 @@ func main() {
 	cfg := network.NewConfig("storage", ":6660")
 
 	peers := network.Autodiscover("storage-one")
-	dispatchHandler := relay.NewDispatch(peers, cfg)
+	relay := relay.NewRelay(peers, cfg)
 	storageHandler := instance.NewStorage(store)
-	http.HandleFunc(cfg.RelayPath, dispatchHandler.Handle)
+	http.HandleFunc(cfg.RelayPath, relay.Handle)
 	http.HandleFunc(cfg.InstancePath, storageHandler.Handle)
 	go http.ListenAndServe(cfg.Addr, nil)
 
