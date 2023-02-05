@@ -23,7 +23,7 @@ func main() {
 	instance := instance.NewInstance(store, cfg)
 	http.HandleFunc(cfg.RelayPath, relay.Handle)
 	http.HandleFunc(cfg.InstancePath, instance.Handle)
-	go http.ListenAndServe(cfg.Addr, nil)
+	go http.ListenAndServe(cfg.Host+":"+cfg.Port, nil)
 
 	t := time.Tick(time.Second * 5)
 	count := 0
