@@ -75,8 +75,6 @@ func (x *Relay) handleDelete(reqUrl url.URL, w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	// TODO: propagate headers etc
-
 	resp, err := x.client.Do(req)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -84,6 +82,8 @@ func (x *Relay) handleDelete(reqUrl url.URL, w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	w.Header().Add("content-type",
+		resp.Header.Get("content-type"))
 	w.WriteHeader(resp.StatusCode)
 
 	defer resp.Body.Close()
@@ -98,6 +98,8 @@ func (x *Relay) handleGet(reqUrl url.URL, w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	w.Header().Add("content-type",
+		resp.Header.Get("content-type"))
 	w.WriteHeader(resp.StatusCode)
 
 	defer resp.Body.Close()
@@ -113,13 +115,17 @@ func (x *Relay) handlePost(reqUrl url.URL, w http.ResponseWriter, r *http.Reques
 	}
 
 	resp, err := x.client.Post(
-		reqUrl.String(), "text/plain", bytes.NewBuffer(value))
+		reqUrl.String(),
+		r.Header.Get("content-type"),
+		bytes.NewBuffer(value))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
 		return
 	}
 
+	w.Header().Add("content-type",
+		resp.Header.Get("content-type"))
 	w.WriteHeader(resp.StatusCode)
 
 	defer resp.Body.Close()

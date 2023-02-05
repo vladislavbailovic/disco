@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"strings"
 	"testing"
 	"time"
 )
@@ -8,29 +9,31 @@ import (
 func TestQueue(t *testing.T) {
 	q := NewQueue()
 	k, _ := NewKey("test")
+	raw := `{"Payload":"test value"}`
 
-	if err := q.Put(k, "test value"); err != nil {
+	if err := q.Put(k, raw); err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
 
 	if got, err := q.Fetch(k); err != nil {
 		t.Errorf("unexpected error: %v", err)
-	} else if got.Value() != "test value" {
-		t.Errorf("unexpected value: %q", got)
+	} else if !strings.Contains(got.Value(), "test value") {
+		t.Errorf("unexpected value: %q", got.Value())
 	}
 }
 
 func TestTimedQueue(t *testing.T) {
 	q := NewTimedQueue(10 * time.Millisecond)
 	k, _ := NewKey("test")
+	raw := `{"Payload":"test value"}`
 
-	if err := q.Put(k, "test value"); err != nil {
+	if err := q.Put(k, raw); err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
 
 	if got, err := q.Fetch(k); err != nil {
 		t.Errorf("unexpected error: %v", err)
-	} else if got.Value() != "test value" {
+	} else if !strings.Contains(got.Value(), "test value") {
 		t.Errorf("unexpected value: %q", got)
 	}
 

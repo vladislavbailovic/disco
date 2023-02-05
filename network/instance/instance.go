@@ -55,6 +55,7 @@ func (x *Instance) handleGet(key *storage.Key, w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	w.Header().Add("content-type", value.MIME().String())
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, "%s", value.Value())
 }

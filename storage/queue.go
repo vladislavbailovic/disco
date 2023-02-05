@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
@@ -34,12 +35,23 @@ type Job struct {
 	Payload string
 }
 
-// TODO: create new job from string
-func NewJob(pld string) Job {
-	return Job{Payload: pld}
+func NewJob(pld string) (Job, error) {
+	var job Job
+	if err := json.Unmarshal([]byte(pld), &job); err != nil {
+		return Job{}, err
+	}
+	return job, nil
 }
 
-func (x Job) Value() string { return x.Payload }
+func (x Job) MIME() ContentType { return ContentTypeJSON }
+
+func (x Job) Value() string {
+	dst, err := json.Marshal(x)
+	if err != nil {
+		fmt.Printf("Error marshalling JSON: %v\n", err)
+	}
+	return string(dst)
+}
 
 func (x Job) isFinished() bool {
 	return x.Status == JobDone || x.Status == JobExpired
@@ -87,7 +99,11 @@ func (x *Queue) Put(key *Key, val string) error {
 	if ok && !job.isFinished() {
 		return fmt.Errorf("job %q already queued", key)
 	}
-	job = NewJob(val)
+	job, err := NewJob(val)
+	if err != nil {
+		return fmt.Errorf(
+			"error serializing job %q: %v", key, err)
+	}
 	return x.put(key, job)
 }
 

@@ -50,8 +50,8 @@ func main() {
 				count = 0
 				r, err = http.Post(
 					"http://localhost:6660/storage?key=ZZZ",
-					"text/plain",
-					bytes.NewBuffer([]byte("Yo")))
+					"application/json",
+					bytes.NewBuffer([]byte(`{"Payload": "Yo"}`)))
 				if err != nil {
 					fmt.Println(err)
 					panic("wat")

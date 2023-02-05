@@ -11,6 +11,10 @@ func (x PlainValue) Value() string {
 	return string(x)
 }
 
+func (x PlainValue) MIME() ContentType {
+	return ContentTypeText
+}
+
 type PlainStore struct {
 	lock sync.RWMutex
 	data map[string]PlainValue
