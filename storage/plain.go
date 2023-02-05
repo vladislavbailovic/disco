@@ -39,3 +39,11 @@ func (x *PlainStore) Put(key *Key, val string) error {
 	x.data[key.String()] = PlainValue(val)
 	return nil
 }
+
+func (x *PlainStore) Delete(key *Key) error {
+	x.lock.Lock()
+	defer x.lock.Unlock()
+
+	delete(x.data, key.String())
+	return nil
+}

@@ -35,6 +35,9 @@ func (x *Instance) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	case http.MethodPost:
 		x.handlePost(key, w, r)
+	case http.MethodDelete:
+		x.handleDelete(key, w, r)
+		return
 		return
 	}
 
@@ -54,6 +57,19 @@ func (x *Instance) handleGet(key *storage.Key, w http.ResponseWriter, r *http.Re
 
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, "%s", value.Value())
+}
+
+func (x *Instance) handleDelete(key *storage.Key, w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("[%v]: deletes key %q from storage\n",
+		network.GetOutboundIP(), key)
+
+	if err := x.Delete(key); err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprintf(w, "%s", err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func (x *Instance) handlePost(key *storage.Key, w http.ResponseWriter, r *http.Request) {

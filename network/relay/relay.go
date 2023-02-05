@@ -58,9 +58,36 @@ func (x *Relay) Handle(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPost:
 		x.handlePost(reqUrl, w, r)
 		return
+	case http.MethodDelete:
+		x.handleDelete(reqUrl, w, r)
+		return
 	}
 
 	w.WriteHeader(http.StatusBadRequest)
+}
+
+func (x *Relay) handleDelete(reqUrl url.URL, w http.ResponseWriter, r *http.Request) {
+	req, err := http.NewRequest(
+		http.MethodDelete, reqUrl.String(), nil)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	// TODO: propagate headers etc
+
+	resp, err := x.client.Do(req)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	w.WriteHeader(resp.StatusCode)
+
+	defer resp.Body.Close()
+	io.Copy(w, resp.Body)
 }
 
 func (x *Relay) handleGet(reqUrl url.URL, w http.ResponseWriter, r *http.Request) {
