@@ -11,6 +11,7 @@ import (
 type Instance struct {
 	storage.Storer
 	apiKey *network.ApiKey
+	cfg    network.Config
 }
 
 func NewInstance(str storage.Storer, cfg network.Config) *Instance {
@@ -20,10 +21,16 @@ func NewInstance(str storage.Storer, cfg network.Config) *Instance {
 	return &Instance{
 		Storer: str,
 		apiKey: network.NewApiKey(cfg.KeyBase),
+		cfg:    cfg,
 	}
 }
 
-func (x *Instance) Handle(w http.ResponseWriter, r *http.Request) {
+func (x *Instance) Run() {
+	http.HandleFunc(x.cfg.InstancePath, x.handle)
+	go http.ListenAndServe(x.cfg.Host+":"+x.cfg.Port, nil)
+}
+
+func (x *Instance) handle(w http.ResponseWriter, r *http.Request) {
 	// Validate x-relay-key
 	relayKey := network.NewApiKey(r.Header.Get("x-relay-key"))
 	if !x.apiKey.Equals(relayKey) {

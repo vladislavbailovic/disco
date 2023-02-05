@@ -13,26 +13,29 @@ import (
 )
 
 type Relay struct {
-	peers           *network.Peers
-	apiKey          *network.ApiKey
-	client          *http.Client
-	storageEndpoint string
-	storagePort     string
+	peers  *network.Peers
+	apiKey *network.ApiKey
+	client *http.Client
+	cfg    network.Config
 }
 
 func NewRelay(peers *network.Peers, cfg network.Config) *Relay {
 	return &Relay{
-		peers:           peers,
-		apiKey:          network.NewApiKey(cfg.KeyBase),
-		storageEndpoint: cfg.InstancePath,
-		storagePort:     cfg.Port,
+		peers:  peers,
+		apiKey: network.NewApiKey(cfg.KeyBase),
 		client: &http.Client{
 			Timeout: 1 * time.Second,
 		},
+		cfg: cfg,
 	}
 }
 
-func (x *Relay) Handle(w http.ResponseWriter, r *http.Request) {
+func (x *Relay) Run() {
+	http.HandleFunc(x.cfg.RelayPath, x.handle)
+	go http.ListenAndServe(x.cfg.Host+":"+x.cfg.Port, nil)
+}
+
+func (x *Relay) handle(w http.ResponseWriter, r *http.Request) {
 	if x.peers == nil || x.peers.Status() != network.Ready {
 		w.WriteHeader(http.StatusInternalServerError)
 		if x.peers != nil {
@@ -144,8 +147,8 @@ func (x *Relay) getInstanceURL(key *storage.Key) url.URL {
 	instance := x.getInstance(key)
 	return url.URL{
 		Scheme:   "http",
-		Host:     instance + ":" + x.storagePort,
-		Path:     x.storageEndpoint,
+		Host:     instance + ":" + x.cfg.Port,
+		Path:     x.cfg.InstancePath,
 		RawQuery: "key=" + url.QueryEscape(key.String()),
 	}
 }

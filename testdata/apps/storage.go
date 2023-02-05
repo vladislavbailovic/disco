@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"disco/network"
+	"disco/network/discovery"
 	"disco/network/instance"
 	"disco/network/relay"
 	"disco/storage"
@@ -18,12 +19,13 @@ func main() {
 	store := storage.NewTimedQueue(6 * time.Second)
 	cfg := network.NewConfig("storage", ":6660")
 
-	peers := network.Autodiscover("storage-one")
+	peers := discovery.Run("storage-one")
+
 	relay := relay.NewRelay(peers, cfg)
+	relay.Run()
+
 	instance := instance.NewInstance(store, cfg)
-	http.HandleFunc(cfg.RelayPath, relay.Handle)
-	http.HandleFunc(cfg.InstancePath, instance.Handle)
-	go http.ListenAndServe(cfg.Host+":"+cfg.Port, nil)
+	instance.Run()
 
 	t := time.Tick(time.Second * 5)
 	count := 0
