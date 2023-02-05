@@ -14,6 +14,7 @@ import (
 
 type Relay struct {
 	peers           *network.Peers
+	apiKey          *network.ApiKey
 	client          *http.Client
 	storageEndpoint string
 	storagePort     string
@@ -22,6 +23,7 @@ type Relay struct {
 func NewRelay(peers *network.Peers, cfg network.Config) *Relay {
 	return &Relay{
 		peers:           peers,
+		apiKey:          network.NewApiKey(cfg.KeyBase),
 		storageEndpoint: cfg.InstancePath,
 		storagePort:     cfg.Port,
 		client: &http.Client{
@@ -69,8 +71,7 @@ func (x *Relay) Handle(w http.ResponseWriter, r *http.Request) {
 func (x *Relay) handleDelete(reqUrl url.URL, w http.ResponseWriter, r *http.Request) {
 	req, err := http.NewRequest(
 		http.MethodDelete, reqUrl.String(), nil)
-	// TODO: proper key
-	req.Header.Add("x-relay-key", "wat")
+	req.Header.Add("x-relay-key", x.apiKey.String())
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
@@ -93,10 +94,9 @@ func (x *Relay) handleDelete(reqUrl url.URL, w http.ResponseWriter, r *http.Requ
 }
 
 func (x *Relay) handleGet(reqUrl url.URL, w http.ResponseWriter, r *http.Request) {
-	// TODO: proper key
 	req, err := http.NewRequest(
 		http.MethodGet, reqUrl.String(), nil)
-	req.Header.Add("x-relay-key", "wat")
+	req.Header.Add("x-relay-key", x.apiKey.String())
 	resp, err := x.client.Do(req)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -120,12 +120,11 @@ func (x *Relay) handlePost(reqUrl url.URL, w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// TODO: proper key
 	req, err := http.NewRequest(
 		http.MethodPost,
 		reqUrl.String(),
 		bytes.NewBuffer(value))
-	req.Header.Add("x-relay-key", "wat")
+	req.Header.Add("x-relay-key", x.apiKey.String())
 	resp, err := x.client.Do(req)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

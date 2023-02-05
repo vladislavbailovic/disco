@@ -20,7 +20,7 @@ func main() {
 
 	peers := network.Autodiscover("storage-one")
 	relay := relay.NewRelay(peers, cfg)
-	instance := instance.NewInstance(store)
+	instance := instance.NewInstance(store, cfg)
 	http.HandleFunc(cfg.RelayPath, relay.Handle)
 	http.HandleFunc(cfg.InstancePath, instance.Handle)
 	go http.ListenAndServe(cfg.Addr, nil)

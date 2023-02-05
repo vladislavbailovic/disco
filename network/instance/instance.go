@@ -10,22 +10,23 @@ import (
 
 type Instance struct {
 	storage.Storer
+	apiKey *network.ApiKey
 }
 
-func NewInstance(str storage.Storer) *Instance {
+func NewInstance(str storage.Storer, cfg network.Config) *Instance {
 	if str == nil {
 		str = storage.Default()
 	}
 	return &Instance{
 		Storer: str,
+		apiKey: network.NewApiKey(cfg.KeyBase),
 	}
 }
 
 func (x *Instance) Handle(w http.ResponseWriter, r *http.Request) {
 	// Validate x-relay-key
-	relayKey := r.Header.Get("x-relay-key")
-	// TODO: make sane
-	if relayKey != "wat" {
+	relayKey := network.NewApiKey(r.Header.Get("x-relay-key"))
+	if !x.apiKey.Equals(relayKey) {
 		w.WriteHeader(http.StatusForbidden)
 		fmt.Fprintf(w, "invalid relayKey: %q", relayKey)
 		return

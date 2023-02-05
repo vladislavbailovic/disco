@@ -2,6 +2,7 @@ package instance
 
 import (
 	"bytes"
+	"disco/network"
 	"disco/storage"
 	"io/ioutil"
 	"net/http"
@@ -11,7 +12,7 @@ import (
 )
 
 func TestInstance_FetchError(t *testing.T) {
-	s := NewInstance(nil)
+	s := NewInstance(nil, network.NewConfig("", ""))
 	key, _ := storage.NewKey("test")
 	if _, err := s.Fetch(key); err == nil {
 		t.Error("expected error")
@@ -21,7 +22,7 @@ func TestInstance_FetchError(t *testing.T) {
 }
 
 func TestInstance_FetchPut(t *testing.T) {
-	s := NewInstance(nil)
+	s := NewInstance(nil, network.NewConfig("", ""))
 	key, _ := storage.NewKey("test")
 	s.Put(key, "wat")
 	if v, err := s.Fetch(key); err != nil {
@@ -32,12 +33,12 @@ func TestInstance_FetchPut(t *testing.T) {
 }
 
 func TestInstance_NoKey(t *testing.T) {
-	s := NewInstance(nil)
+	s := NewInstance(nil, network.NewConfig("", ""))
 	w := httptest.NewRecorder()
 	lnk, _ := url.Parse("http://localhost/")
 	req, _ := http.NewRequest(
 		http.MethodGet, lnk.String(), nil)
-	req.Header.Add("x-relay-key", "wat")
+	req.Header.Add("x-relay-key", s.apiKey.String())
 	s.Handle(w, req)
 	if w.Code != http.StatusBadRequest {
 		t.Errorf("expected Err400 on no key")
@@ -45,12 +46,12 @@ func TestInstance_NoKey(t *testing.T) {
 }
 
 func TestInstance_MissingKey(t *testing.T) {
-	s := NewInstance(nil)
+	s := NewInstance(nil, network.NewConfig("", ""))
 	w := httptest.NewRecorder()
 	lnk, _ := url.Parse("http://localhost/?key=wat")
 	req, _ := http.NewRequest(
 		http.MethodGet, lnk.String(), nil)
-	req.Header.Add("x-relay-key", "wat")
+	req.Header.Add("x-relay-key", s.apiKey.String())
 	s.Handle(w, req)
 	if w.Code != http.StatusNotFound {
 		t.Errorf("expected Err404 on missing key")
@@ -65,7 +66,7 @@ func TestInstance_MissingKey(t *testing.T) {
 }
 
 func TestInstance_HappyPath(t *testing.T) {
-	s := NewInstance(nil)
+	s := NewInstance(nil, network.NewConfig("", ""))
 	expected := "YAY this is the proper value"
 	key, _ := storage.NewKey("wat")
 	s.Put(key, expected)
@@ -73,7 +74,7 @@ func TestInstance_HappyPath(t *testing.T) {
 	lnk, _ := url.Parse("http://localhost/?key=" + key.String())
 	req, _ := http.NewRequest(
 		http.MethodGet, lnk.String(), nil)
-	req.Header.Add("x-relay-key", "wat")
+	req.Header.Add("x-relay-key", s.apiKey.String())
 	s.Handle(w, req)
 	if w.Code != http.StatusOK {
 		t.Errorf("expected 200OK with proper key")
@@ -88,14 +89,14 @@ func TestInstance_HappyPath(t *testing.T) {
 }
 
 func TestInstance_HappyPathRoundtrip(t *testing.T) {
-	s := NewInstance(nil)
+	s := NewInstance(nil, network.NewConfig("", ""))
 	expected := "YAY this is the proper value"
 	lnk, _ := url.Parse("http://localhost/?key=wat")
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest(
 		http.MethodGet, lnk.String(), nil)
-	req.Header.Add("x-relay-key", "wat")
+	req.Header.Add("x-relay-key", s.apiKey.String())
 	s.Handle(w, req)
 	if w.Code != http.StatusNotFound {
 		t.Errorf("should be not found initially: %d", w.Code)
@@ -107,7 +108,7 @@ func TestInstance_HappyPathRoundtrip(t *testing.T) {
 		lnk.String(),
 		bytes.NewBuffer([]byte(expected)),
 	)
-	post.Header.Add("x-relay-key", "wat")
+	post.Header.Add("x-relay-key", s.apiKey.String())
 	s.Handle(w, post)
 	if w.Code != http.StatusOK {
 		t.Errorf("expected 200OK saving the value: %d", w.Code)
@@ -116,7 +117,7 @@ func TestInstance_HappyPathRoundtrip(t *testing.T) {
 	w = httptest.NewRecorder()
 	req, _ = http.NewRequest(
 		http.MethodGet, lnk.String(), nil)
-	req.Header.Add("x-relay-key", "wat")
+	req.Header.Add("x-relay-key", s.apiKey.String())
 	s.Handle(w, req)
 	if w.Code != http.StatusOK {
 		t.Errorf("should be found now")
