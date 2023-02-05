@@ -51,3 +51,10 @@ func (x *PlainStore) Delete(key *Key) error {
 	delete(x.data, key.String())
 	return nil
 }
+
+func (x *PlainStore) Stats() Valuer {
+	x.lock.RLock()
+	defer x.lock.RUnlock()
+
+	return PlainValue(fmt.Sprintf("%d", len(x.data)))
+}

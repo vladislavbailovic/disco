@@ -4,6 +4,7 @@ type Storer interface {
 	Fetch(*Key) (Valuer, error)
 	Put(*Key, string) error
 	Delete(*Key) error
+	Stats() Valuer
 }
 
 type Valuer interface {
@@ -29,5 +30,5 @@ func (x ContentType) String() string {
 	case ContentTypeJSON:
 		return ""
 	}
-	panic("unknown content type")
+	panic("Unknown content type")
 }

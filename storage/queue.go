@@ -27,7 +27,33 @@ func (x JobStatus) String() string {
 	case JobExpired:
 		return "Expired"
 	}
-	panic("Uknown job status")
+	panic("Unknown job status")
+}
+
+type QueueStats struct {
+	Queued  uint
+	Running uint
+	Done    uint
+	Expired uint
+}
+
+func (x QueueStats) MIME() ContentType { return ContentTypeJSON }
+
+func (x QueueStats) Value() string {
+	dst, err := json.Marshal(x)
+	if err != nil {
+		fmt.Printf("Error marshalling JSON: %v\n", err)
+	}
+	return string(dst)
+}
+
+func (x QueueStats) Add(y QueueStats) QueueStats {
+	return QueueStats{
+		Queued:  x.Queued + y.Queued,
+		Running: x.Running + y.Running,
+		Done:    x.Done + y.Done,
+		Expired: x.Expired + y.Expired,
+	}
 }
 
 type Job struct {
@@ -119,6 +145,26 @@ func (x *Queue) put(key *Key, job Job) error {
 	defer x.lock.Unlock()
 	x.data[key.String()] = job
 	return nil
+}
+
+func (x *Queue) Stats() Valuer {
+	stats := QueueStats{}
+	x.lock.RLock()
+	defer x.lock.RUnlock()
+
+	for _, job := range x.data {
+		switch job.Status {
+		case JobQueued:
+			stats.Queued += 1
+		case JobRunning:
+			stats.Running += 1
+		case JobDone:
+			stats.Done += 1
+		case JobExpired:
+			stats.Expired += 1
+		}
+	}
+	return stats
 }
 
 type TimedQueue struct {
