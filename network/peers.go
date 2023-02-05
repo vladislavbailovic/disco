@@ -18,7 +18,7 @@ func NewPeers() *Peers {
 }
 
 func (x *Peers) Get() []string {
-	cons := x.getConfirmed()
+	cons := x.GetConfirmed()
 	sort.Strings(cons)
 	return cons
 }
@@ -29,7 +29,6 @@ func (x *Peers) Status() DiscoveryStatus {
 	return x.status
 }
 
-/// Public because of tests
 func (x *Peers) SetReady(ready bool) {
 	x.lock.Lock()
 	defer x.lock.Unlock()
@@ -40,7 +39,7 @@ func (x *Peers) SetReady(ready bool) {
 	}
 }
 
-func (x *Peers) getAll() []string {
+func (x *Peers) GetAll() []string {
 	x.lock.RLock()
 	defer x.lock.RUnlock()
 	cons := make([]string, 0, len(x.cons))
@@ -51,7 +50,7 @@ func (x *Peers) getAll() []string {
 	return cons
 }
 
-func (x *Peers) getConfirmed() []string {
+func (x *Peers) GetConfirmed() []string {
 	x.lock.RLock()
 	defer x.lock.RUnlock()
 	cons := make([]string, 0, len(x.cons))
@@ -63,7 +62,7 @@ func (x *Peers) getConfirmed() []string {
 	return cons
 }
 
-func (x *Peers) totalLenExcept(addr string) int {
+func (x *Peers) TotalLenExcept(addr string) int {
 	x.lock.RLock()
 	defer x.lock.RUnlock()
 	count := len(x.cons)
@@ -73,7 +72,7 @@ func (x *Peers) totalLenExcept(addr string) int {
 	return count
 }
 
-func (x *Peers) add(cons ...string) {
+func (x *Peers) Add(cons ...string) {
 	x.lock.Lock()
 	defer x.lock.Unlock()
 	for _, c := range cons {
@@ -95,7 +94,7 @@ func (x *Peers) Confirm(cons ...string) {
 	}
 }
 
-func (x *Peers) unconfirm(cons ...string) {
+func (x *Peers) Unconfirm(cons ...string) {
 	x.lock.Lock()
 	defer x.lock.Unlock()
 	for _, c := range cons {

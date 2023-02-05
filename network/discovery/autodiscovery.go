@@ -1,6 +1,7 @@
-package network
+package discovery
 
 import (
+	"disco/network"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -8,9 +9,9 @@ import (
 	"time"
 )
 
-func Autodiscover(seed string) *Peers {
-	var peers *Peers = NewPeers()
-	myself := fmt.Sprintf("%s", GetOutboundIP())
+func Run(seed string) *network.Peers {
+	var peers *network.Peers = network.NewPeers()
+	myself := fmt.Sprintf("%s", network.GetOutboundIP())
 	peers.Confirm(myself)
 	go hello(seed, peers)
 
@@ -20,9 +21,9 @@ func Autodiscover(seed string) *Peers {
 	return peers
 }
 
-func hello(seed string, peers *Peers) {
+func hello(seed string, peers *network.Peers) {
 	t := time.Tick(time.Second * 5)
-	myself := fmt.Sprintf("%s", GetOutboundIP())
+	myself := fmt.Sprintf("%s", network.GetOutboundIP())
 	client := http.Client{
 		Timeout: time.Second,
 	}
@@ -31,8 +32,8 @@ func hello(seed string, peers *Peers) {
 		select {
 		case <-t:
 			cons := []string{seed}
-			if peers.totalLenExcept(myself) > 0 {
-				cons = peers.getAll()
+			if peers.TotalLenExcept(myself) > 0 {
+				cons = peers.GetAll()
 			}
 			for _, addr := range cons {
 				if addr == myself {
@@ -43,13 +44,13 @@ func hello(seed string, peers *Peers) {
 				r, err := client.Get(fmt.Sprintf("http://%s:6660/hello", addr))
 				if err != nil {
 					// fmt.Println("well, something didn't go well", err)
-					peers.unconfirm(addr)
+					peers.Unconfirm(addr)
 					continue
 				}
 
 				if r.StatusCode != http.StatusOK {
 					// fmt.Println("NOT OK!", addr)
-					peers.unconfirm(addr)
+					peers.Unconfirm(addr)
 					continue
 				}
 
@@ -57,19 +58,19 @@ func hello(seed string, peers *Peers) {
 				defer r.Body.Close()
 				if err := json.NewDecoder(r.Body).Decode(&res); err != nil {
 					// fmt.Println("error parsing response", err)
-					peers.unconfirm(addr)
+					peers.Unconfirm(addr)
 					continue
 				}
 				// fmt.Println("adding cons from addr", addr, res)
-				peers.add(res...)
+				peers.Add(res...)
 
-				peers.SetReady(len(res) == len(peers.getConfirmed()))
+				peers.SetReady(len(res) == len(peers.GetConfirmed()))
 			}
 		}
 	}
 }
 
-func handleHello(peers *Peers) func(http.ResponseWriter, *http.Request) {
+func handleHello(peers *network.Peers) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		host, _ /*port*/, err := net.SplitHostPort(r.RemoteAddr)
 		if err != nil {
