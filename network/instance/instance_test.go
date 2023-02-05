@@ -39,7 +39,7 @@ func TestInstance_NoKey(t *testing.T) {
 	req, _ := http.NewRequest(
 		http.MethodGet, lnk.String(), nil)
 	req.Header.Add("x-relay-key", s.apiKey.String())
-	s.Handle(w, req)
+	s.handle(w, req)
 	if w.Code != http.StatusBadRequest {
 		t.Errorf("expected Err400 on no key")
 	}
@@ -52,7 +52,7 @@ func TestInstance_MissingKey(t *testing.T) {
 	req, _ := http.NewRequest(
 		http.MethodGet, lnk.String(), nil)
 	req.Header.Add("x-relay-key", s.apiKey.String())
-	s.Handle(w, req)
+	s.handle(w, req)
 	if w.Code != http.StatusNotFound {
 		t.Errorf("expected Err404 on missing key")
 	}
@@ -75,7 +75,7 @@ func TestInstance_HappyPath(t *testing.T) {
 	req, _ := http.NewRequest(
 		http.MethodGet, lnk.String(), nil)
 	req.Header.Add("x-relay-key", s.apiKey.String())
-	s.Handle(w, req)
+	s.handle(w, req)
 	if w.Code != http.StatusOK {
 		t.Errorf("expected 200OK with proper key")
 	}
@@ -97,7 +97,7 @@ func TestInstance_HappyPathRoundtrip(t *testing.T) {
 	req, _ := http.NewRequest(
 		http.MethodGet, lnk.String(), nil)
 	req.Header.Add("x-relay-key", s.apiKey.String())
-	s.Handle(w, req)
+	s.handle(w, req)
 	if w.Code != http.StatusNotFound {
 		t.Errorf("should be not found initially: %d", w.Code)
 	}
@@ -109,7 +109,7 @@ func TestInstance_HappyPathRoundtrip(t *testing.T) {
 		bytes.NewBuffer([]byte(expected)),
 	)
 	post.Header.Add("x-relay-key", s.apiKey.String())
-	s.Handle(w, post)
+	s.handle(w, post)
 	if w.Code != http.StatusOK {
 		t.Errorf("expected 200OK saving the value: %d", w.Code)
 	}
@@ -118,7 +118,7 @@ func TestInstance_HappyPathRoundtrip(t *testing.T) {
 	req, _ = http.NewRequest(
 		http.MethodGet, lnk.String(), nil)
 	req.Header.Add("x-relay-key", s.apiKey.String())
-	s.Handle(w, req)
+	s.handle(w, req)
 	if w.Code != http.StatusOK {
 		t.Errorf("should be found now")
 	}

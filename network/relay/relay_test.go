@@ -16,7 +16,7 @@ import (
 func TestRelay_ErrorsOnNilPeers(t *testing.T) {
 	d := NewRelay(nil, network.NewConfig("storage", ":6660"))
 	w := httptest.NewRecorder()
-	d.Handle(w, nil)
+	d.handle(w, nil)
 	if w.Code != http.StatusInternalServerError {
 		t.Errorf("expected Err500 on empty peers dispatch")
 	}
@@ -25,7 +25,7 @@ func TestRelay_ErrorsOnNilPeers(t *testing.T) {
 func TestRelay_ErrorsOnPeersInit(t *testing.T) {
 	d := NewRelay(network.NewPeers(), network.NewConfig("storage", ":6660"))
 	w := httptest.NewRecorder()
-	d.Handle(w, nil)
+	d.handle(w, nil)
 	if w.Code != http.StatusInternalServerError {
 		t.Errorf("expected Err500 on empty peers dispatch")
 	}
@@ -110,7 +110,7 @@ func TestRelay_NoKey(t *testing.T) {
 	d := NewRelay(p, network.NewConfig("storage", ":6660"))
 	w := httptest.NewRecorder()
 	lnk, _ := url.Parse("http://localhost/")
-	d.Handle(w, &http.Request{
+	d.handle(w, &http.Request{
 		URL: lnk,
 	})
 	if w.Code != http.StatusBadRequest {
@@ -129,7 +129,7 @@ func TestRelay_ErrorsWithNoStorageServer(t *testing.T) {
 	}
 	w := httptest.NewRecorder()
 	lnk, _ := url.Parse("http://whatever-fake-host/?key=AAA")
-	d.Handle(w, &http.Request{
+	d.handle(w, &http.Request{
 		URL:    lnk,
 		Method: http.MethodGet,
 	})
@@ -162,14 +162,14 @@ func TestRelay_HappyPath(t *testing.T) {
 	p.SetReady(true)
 
 	d := NewRelay(p, network.NewConfig("storage", ":6660"))
-	d.storagePort = port
+	d.cfg.Port = port
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(
 		http.MethodGet,
 		"/?key=AAA",
 		nil)
 
-	d.Handle(w, r)
+	d.handle(w, r)
 	if w.Code != http.StatusOK {
 		t.Errorf("expected 200OK on transport error")
 	}
