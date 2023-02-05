@@ -11,8 +11,8 @@ import (
 	"testing"
 )
 
-func TestInstance_FetchError(t *testing.T) {
-	s := NewInstance(nil, network.NewConfig("", ""))
+func TestData_FetchError(t *testing.T) {
+	s := NewData(nil, network.NewConfig("", ""))
 	key, _ := storage.NewKey("test")
 	if _, err := s.Fetch(key); err == nil {
 		t.Error("expected error")
@@ -21,8 +21,8 @@ func TestInstance_FetchError(t *testing.T) {
 	}
 }
 
-func TestInstance_FetchPut(t *testing.T) {
-	s := NewInstance(nil, network.NewConfig("", ""))
+func TestData_FetchPut(t *testing.T) {
+	s := NewData(nil, network.NewConfig("", ""))
 	key, _ := storage.NewKey("test")
 	s.Put(key, "wat")
 	if v, err := s.Fetch(key); err != nil {
@@ -32,8 +32,8 @@ func TestInstance_FetchPut(t *testing.T) {
 	}
 }
 
-func TestInstance_NoKey(t *testing.T) {
-	s := NewInstance(nil, network.NewConfig("", ""))
+func TestData_NoKey(t *testing.T) {
+	s := NewData(nil, network.NewConfig("", ""))
 	w := httptest.NewRecorder()
 	lnk, _ := url.Parse("http://localhost/")
 	req, _ := http.NewRequest(
@@ -45,8 +45,8 @@ func TestInstance_NoKey(t *testing.T) {
 	}
 }
 
-func TestInstance_MissingKey(t *testing.T) {
-	s := NewInstance(nil, network.NewConfig("", ""))
+func TestData_MissingKey(t *testing.T) {
+	s := NewData(nil, network.NewConfig("", ""))
 	w := httptest.NewRecorder()
 	lnk, _ := url.Parse("http://localhost/?key=wat")
 	req, _ := http.NewRequest(
@@ -65,8 +65,8 @@ func TestInstance_MissingKey(t *testing.T) {
 	}
 }
 
-func TestInstance_HappyPath(t *testing.T) {
-	s := NewInstance(nil, network.NewConfig("", ""))
+func TestData_HappyPath(t *testing.T) {
+	s := NewData(nil, network.NewConfig("", ""))
 	expected := "YAY this is the proper value"
 	key, _ := storage.NewKey("wat")
 	s.Put(key, expected)
@@ -88,8 +88,8 @@ func TestInstance_HappyPath(t *testing.T) {
 	}
 }
 
-func TestInstance_HappyPathRoundtrip(t *testing.T) {
-	s := NewInstance(nil, network.NewConfig("", ""))
+func TestData_HappyPathRoundtrip(t *testing.T) {
+	s := NewData(nil, network.NewConfig("", ""))
 	expected := "YAY this is the proper value"
 	lnk, _ := url.Parse("http://localhost/?key=wat")
 

@@ -3,7 +3,6 @@ package relay
 import (
 	"disco/network"
 	"net/http"
-	"path"
 )
 
 type Relay struct {
@@ -22,6 +21,5 @@ func NewRelay(peers *network.Peers, cfg network.Config) *Relay {
 
 func (x *Relay) Run() {
 	http.HandleFunc(x.cfg.RelayPath, x.data.handle)
-	http.HandleFunc(path.Join(x.cfg.RelayPath, "metrics"), x.metrics.handle)
 	go http.ListenAndServe(x.cfg.Host+":"+x.cfg.Port, nil)
 }
