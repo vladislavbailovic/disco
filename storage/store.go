@@ -60,6 +60,10 @@ func (x *Stats) Len() int {
 	return len(*x)
 }
 
+func (x *Stats) GetMeters() []Meter {
+	return *x
+}
+
 func (x *Stats) Add(meters ...Meter) {
 	for _, m := range meters {
 		*x = append(*x, m)

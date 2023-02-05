@@ -39,10 +39,22 @@ func (x *Metrics) handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO: switch output type
+	outputType := "prometheus"
+
 	stats := x.getAllStats().Sum()
-	w.Header().Add("content-type", stats.MIME().String())
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, stats.Value())
+	if outputType == "json" {
+		w.Header().Add("content-type", stats.MIME().String())
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, stats.Value())
+	} else {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, "HELP disco Disco storage metrics\n")
+		fmt.Fprintf(w, "Type disco gauge\n")
+		for _, m := range stats.GetMeters() {
+			fmt.Fprintf(w, "disco(name=%q) %d\n", m.Label, m.Value)
+		}
+	}
 }
 
 func (x *Metrics) getAllStats() *storage.Stats {
