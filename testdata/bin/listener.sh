@@ -1,6 +1,7 @@
 #!/bin/bash
 
 function finish() {
+	echo
 	echo "Well this is now done, kthxbai"
 	docker stop listener-three
 	docker stop listener-two
