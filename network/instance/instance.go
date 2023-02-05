@@ -8,20 +8,20 @@ import (
 	"net/http"
 )
 
-type Storage struct {
+type Instance struct {
 	store.Storer
 }
 
-func NewStorage(str store.Storer) *Storage {
+func NewInstance(str store.Storer) *Instance {
 	if str == nil {
 		str = store.Default()
 	}
-	return &Storage{
+	return &Instance{
 		Storer: str,
 	}
 }
 
-func (x *Storage) Handle(w http.ResponseWriter, r *http.Request) {
+func (x *Instance) Handle(w http.ResponseWriter, r *http.Request) {
 	key, err := store.NewKey(r.URL.Query().Get("key"))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -41,7 +41,7 @@ func (x *Storage) Handle(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusBadRequest)
 }
 
-func (x *Storage) handleGet(key *store.Key, w http.ResponseWriter, r *http.Request) {
+func (x *Instance) handleGet(key *store.Key, w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("[%v]: gets key %q from storage\n",
 		network.GetOutboundIP(), key)
 
@@ -56,7 +56,7 @@ func (x *Storage) handleGet(key *store.Key, w http.ResponseWriter, r *http.Reque
 	fmt.Fprintf(w, "%s", value.Value())
 }
 
-func (x *Storage) handlePost(key *store.Key, w http.ResponseWriter, r *http.Request) {
+func (x *Instance) handlePost(key *store.Key, w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("[%v]: sets key %q in storage\n",
 		network.GetOutboundIP(), key)
 

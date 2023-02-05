@@ -10,8 +10,8 @@ import (
 	"testing"
 )
 
-func TestStorage_FetchError(t *testing.T) {
-	s := NewStorage(nil)
+func TestInstance_FetchError(t *testing.T) {
+	s := NewInstance(nil)
 	key, _ := store.NewKey("test")
 	if _, err := s.Fetch(key); err == nil {
 		t.Error("expected error")
@@ -20,8 +20,8 @@ func TestStorage_FetchError(t *testing.T) {
 	}
 }
 
-func TestStorage_FetchPut(t *testing.T) {
-	s := NewStorage(nil)
+func TestInstance_FetchPut(t *testing.T) {
+	s := NewInstance(nil)
 	key, _ := store.NewKey("test")
 	s.Put(key, "wat")
 	if v, err := s.Fetch(key); err != nil {
@@ -31,8 +31,8 @@ func TestStorage_FetchPut(t *testing.T) {
 	}
 }
 
-func TestStorage_NoKey(t *testing.T) {
-	s := NewStorage(nil)
+func TestInstance_NoKey(t *testing.T) {
+	s := NewInstance(nil)
 	w := httptest.NewRecorder()
 	lnk, _ := url.Parse("http://localhost/")
 	s.Handle(w, &http.Request{
@@ -44,8 +44,8 @@ func TestStorage_NoKey(t *testing.T) {
 	}
 }
 
-func TestStorage_MissingKey(t *testing.T) {
-	s := NewStorage(nil)
+func TestInstance_MissingKey(t *testing.T) {
+	s := NewInstance(nil)
 	w := httptest.NewRecorder()
 	lnk, _ := url.Parse("http://localhost/?key=wat")
 	s.Handle(w, &http.Request{
@@ -64,8 +64,8 @@ func TestStorage_MissingKey(t *testing.T) {
 	}
 }
 
-func TestStorage_HappyPath(t *testing.T) {
-	s := NewStorage(nil)
+func TestInstance_HappyPath(t *testing.T) {
+	s := NewInstance(nil)
 	expected := "YAY this is the proper value"
 	key, _ := store.NewKey("wat")
 	s.Put(key, expected)
@@ -87,8 +87,8 @@ func TestStorage_HappyPath(t *testing.T) {
 	}
 }
 
-func TestStorage_HappyPathRoundtrip(t *testing.T) {
-	s := NewStorage(nil)
+func TestInstance_HappyPathRoundtrip(t *testing.T) {
+	s := NewInstance(nil)
 	expected := "YAY this is the proper value"
 	lnk, _ := url.Parse("http://localhost/?key=wat")
 
