@@ -13,8 +13,8 @@ import (
 	"time"
 )
 
-func TestRelay_ErrorsOnNilPeers(t *testing.T) {
-	d := NewRelay(nil, network.NewConfig("storage", ":6660"))
+func TestData_ErrorsOnNilPeers(t *testing.T) {
+	d := NewData(nil, network.NewConfig("storage", ":6660"))
 	w := httptest.NewRecorder()
 	d.handle(w, nil)
 	if w.Code != http.StatusInternalServerError {
@@ -22,8 +22,8 @@ func TestRelay_ErrorsOnNilPeers(t *testing.T) {
 	}
 }
 
-func TestRelay_ErrorsOnPeersInit(t *testing.T) {
-	d := NewRelay(network.NewPeers(), network.NewConfig("storage", ":6660"))
+func TestData_ErrorsOnPeersInit(t *testing.T) {
+	d := NewData(network.NewPeers(), network.NewConfig("storage", ":6660"))
 	w := httptest.NewRecorder()
 	d.handle(w, nil)
 	if w.Code != http.StatusInternalServerError {
@@ -38,11 +38,11 @@ func TestRelay_ErrorsOnPeersInit(t *testing.T) {
 	}
 }
 
-func TestRelay_InstanceGetting(t *testing.T) {
+func TestData_InstanceGetting(t *testing.T) {
 	p := network.NewPeers()
 	p.Confirm("test1", "test2")
 
-	d := NewRelay(p, network.NewConfig("storage", ":6660"))
+	d := NewData(p, network.NewConfig("storage", ":6660"))
 	suite := map[string]string{
 		"AAA": "test1",
 		"aaa": "test1",
@@ -65,11 +65,11 @@ func TestRelay_InstanceGetting(t *testing.T) {
 	}
 }
 
-func TestRelay_InstanceUrlGetting(t *testing.T) {
+func TestData_InstanceUrlGetting(t *testing.T) {
 	p := network.NewPeers()
 	p.Confirm("test1", "test2", "test3")
 
-	d := NewRelay(p, network.NewConfig("storage", ":6660"))
+	d := NewData(p, network.NewConfig("storage", ":6660"))
 	suite := map[string]struct {
 		host  string
 		query string
@@ -102,12 +102,12 @@ func TestRelay_InstanceUrlGetting(t *testing.T) {
 	}
 }
 
-func TestRelay_NoKey(t *testing.T) {
+func TestData_NoKey(t *testing.T) {
 	p := network.NewPeers()
 	p.Confirm("test1", "test2")
 	p.SetReady(true)
 
-	d := NewRelay(p, network.NewConfig("storage", ":6660"))
+	d := NewData(p, network.NewConfig("storage", ":6660"))
 	w := httptest.NewRecorder()
 	lnk, _ := url.Parse("http://localhost/")
 	d.handle(w, &http.Request{
@@ -118,12 +118,12 @@ func TestRelay_NoKey(t *testing.T) {
 	}
 }
 
-func TestRelay_ErrorsWithNoStorageServer(t *testing.T) {
+func TestData_ErrorsWithNoStorageServer(t *testing.T) {
 	p := network.NewPeers()
 	p.Confirm("test1", "test2")
 	p.SetReady(true)
 
-	d := NewRelay(p, network.NewConfig("storage", ":6660"))
+	d := NewData(p, network.NewConfig("storage", ":6660"))
 	d.client = &http.Client{
 		Timeout: time.Millisecond,
 	}
@@ -145,7 +145,7 @@ func TestRelay_ErrorsWithNoStorageServer(t *testing.T) {
 	}
 }
 
-func TestRelay_HappyPath(t *testing.T) {
+func TestData_HappyPath(t *testing.T) {
 	handle := func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, r.URL.Query().Get("key"))
@@ -161,7 +161,7 @@ func TestRelay_HappyPath(t *testing.T) {
 	p.Confirm(host, "test2")
 	p.SetReady(true)
 
-	d := NewRelay(p, network.NewConfig("storage", ":6660"))
+	d := NewData(p, network.NewConfig("storage", ":6660"))
 	d.cfg.Port = port
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(
