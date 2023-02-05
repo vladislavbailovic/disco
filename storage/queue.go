@@ -30,32 +30,6 @@ func (x JobStatus) String() string {
 	panic("Unknown job status")
 }
 
-type QueueStats struct {
-	Queued  uint
-	Running uint
-	Done    uint
-	Expired uint
-}
-
-func (x QueueStats) MIME() ContentType { return ContentTypeJSON }
-
-func (x QueueStats) Value() string {
-	dst, err := json.Marshal(x)
-	if err != nil {
-		fmt.Printf("Error marshalling JSON: %v\n", err)
-	}
-	return string(dst)
-}
-
-func (x QueueStats) Add(y QueueStats) QueueStats {
-	return QueueStats{
-		Queued:  x.Queued + y.Queued,
-		Running: x.Running + y.Running,
-		Done:    x.Done + y.Done,
-		Expired: x.Expired + y.Expired,
-	}
-}
-
 type Job struct {
 	Status  JobStatus
 	Payload string
@@ -147,24 +121,29 @@ func (x *Queue) put(key *Key, job Job) error {
 	return nil
 }
 
-func (x *Queue) Stats() Valuer {
-	stats := QueueStats{}
+func (x *Queue) Stats() *Stats {
 	x.lock.RLock()
 	defer x.lock.RUnlock()
 
+	var q, r, d, e int
 	for _, job := range x.data {
 		switch job.Status {
 		case JobQueued:
-			stats.Queued += 1
+			q += 1
 		case JobRunning:
-			stats.Running += 1
+			r += 1
 		case JobDone:
-			stats.Done += 1
+			d += 1
 		case JobExpired:
-			stats.Expired += 1
+			e += 1
 		}
 	}
-	return stats
+	return NewStats(
+		NewMeter("Queued", q),
+		NewMeter("Running", r),
+		NewMeter("Done", d),
+		NewMeter("Expired", e),
+	)
 }
 
 type TimedQueue struct {

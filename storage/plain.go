@@ -52,9 +52,9 @@ func (x *PlainStore) Delete(key *Key) error {
 	return nil
 }
 
-func (x *PlainStore) Stats() Valuer {
+func (x *PlainStore) Stats() *Stats {
 	x.lock.RLock()
 	defer x.lock.RUnlock()
 
-	return PlainValue(fmt.Sprintf("%d", len(x.data)))
+	return NewStats(NewMeter("Total", len(x.data)))
 }

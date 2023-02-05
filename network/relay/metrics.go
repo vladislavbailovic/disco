@@ -2,7 +2,13 @@ package relay
 
 import (
 	"disco/network"
+	"disco/storage"
+	"fmt"
+	"io/ioutil"
 	"net/http"
+	"net/url"
+	"path"
+	"sync"
 	"time"
 )
 
@@ -25,5 +31,64 @@ func NewMetrics(peers *network.Peers, cfg network.Config) *Metrics {
 }
 
 func (x *Metrics) handle(w http.ResponseWriter, r *http.Request) {
-	// TODO: serve metrics
+	if x.peers == nil || x.peers.Status() != network.Ready {
+		w.WriteHeader(http.StatusInternalServerError)
+		if x.peers != nil {
+			w.Write([]byte(x.peers.Status().String()))
+		}
+		return
+	}
+
+	stats := x.getAllStats().Sum()
+	w.Header().Add("content-type", stats.MIME().String())
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, stats.Value())
+}
+
+func (x *Metrics) getAllStats() *storage.Stats {
+	stats := storage.NewStats()
+	var wg sync.WaitGroup
+
+	for _, peer := range x.peers.Get() {
+		wg.Add(1)
+		go func(stats *storage.Stats, p string) {
+			reqUrl := url.URL{
+				Scheme: "http",
+				Host:   p + ":" + x.cfg.Port,
+				Path:   path.Join(x.cfg.InstancePath, "metrics"),
+			}
+			req, err := http.NewRequest(
+				http.MethodGet, reqUrl.String(), nil)
+			if err != nil {
+				fmt.Printf("Error building request to %q: %v\n", p, err)
+				return
+			}
+
+			req.Header.Add("x-relay-key", x.apiKey.String())
+			resp, err := x.client.Do(req)
+			if err != nil {
+				fmt.Printf("Error getting %q: %v\n", p, err)
+				return
+			}
+
+			defer resp.Body.Close()
+			value, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				fmt.Printf("Error reading response from %q: %v\n", p, err)
+				return
+			}
+
+			is, err := storage.DecodeStats(value)
+			if err != nil {
+				fmt.Printf("Error decoding stats from %q: %v", p, err)
+				return
+			}
+
+			stats.Merge(is)
+			wg.Done()
+		}(stats, peer)
+	}
+
+	wg.Wait()
+	return stats
 }
