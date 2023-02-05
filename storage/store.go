@@ -1,4 +1,4 @@
-package store
+package storage
 
 type Storer interface {
 	Fetch(*Key) (Valuer, error)

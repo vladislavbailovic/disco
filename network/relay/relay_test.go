@@ -2,7 +2,7 @@ package relay
 
 import (
 	"disco/network"
-	"disco/store"
+	"disco/storage"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -51,7 +51,7 @@ func TestRelay_InstanceGetting(t *testing.T) {
 	}
 	for test, want := range suite {
 		t.Run(test, func(t *testing.T) {
-			key, err := store.NewKey(test)
+			key, err := storage.NewKey(test)
 			if err != nil {
 				t.Error(err)
 				return
@@ -84,7 +84,7 @@ func TestRelay_InstanceUrlGetting(t *testing.T) {
 	}
 	for test, want := range suite {
 		t.Run(test, func(t *testing.T) {
-			key, err := store.NewKey(test)
+			key, err := storage.NewKey(test)
 			if err != nil {
 				t.Error(err)
 				return

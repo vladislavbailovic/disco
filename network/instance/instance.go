@@ -2,19 +2,19 @@ package instance
 
 import (
 	"disco/network"
-	"disco/store"
+	"disco/storage"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 )
 
 type Instance struct {
-	store.Storer
+	storage.Storer
 }
 
-func NewInstance(str store.Storer) *Instance {
+func NewInstance(str storage.Storer) *Instance {
 	if str == nil {
-		str = store.Default()
+		str = storage.Default()
 	}
 	return &Instance{
 		Storer: str,
@@ -22,7 +22,7 @@ func NewInstance(str store.Storer) *Instance {
 }
 
 func (x *Instance) Handle(w http.ResponseWriter, r *http.Request) {
-	key, err := store.NewKey(r.URL.Query().Get("key"))
+	key, err := storage.NewKey(r.URL.Query().Get("key"))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintf(w, err.Error())
@@ -41,7 +41,7 @@ func (x *Instance) Handle(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusBadRequest)
 }
 
-func (x *Instance) handleGet(key *store.Key, w http.ResponseWriter, r *http.Request) {
+func (x *Instance) handleGet(key *storage.Key, w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("[%v]: gets key %q from storage\n",
 		network.GetOutboundIP(), key)
 
@@ -56,7 +56,7 @@ func (x *Instance) handleGet(key *store.Key, w http.ResponseWriter, r *http.Requ
 	fmt.Fprintf(w, "%s", value.Value())
 }
 
-func (x *Instance) handlePost(key *store.Key, w http.ResponseWriter, r *http.Request) {
+func (x *Instance) handlePost(key *storage.Key, w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("[%v]: sets key %q in storage\n",
 		network.GetOutboundIP(), key)
 

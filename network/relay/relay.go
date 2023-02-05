@@ -3,7 +3,7 @@ package relay
 import (
 	"bytes"
 	"disco/network"
-	"disco/store"
+	"disco/storage"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -39,7 +39,7 @@ func (x *Relay) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	key, err := store.NewKey(r.URL.Query().Get("key"))
+	key, err := storage.NewKey(r.URL.Query().Get("key"))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintf(w, err.Error())
@@ -99,7 +99,7 @@ func (x *Relay) handlePost(reqUrl url.URL, w http.ResponseWriter, r *http.Reques
 	io.Copy(w, resp.Body)
 }
 
-func (x *Relay) getInstanceURL(key *store.Key) url.URL {
+func (x *Relay) getInstanceURL(key *storage.Key) url.URL {
 	instance := x.getInstance(key)
 	return url.URL{
 		Scheme:   "http",
@@ -109,9 +109,9 @@ func (x *Relay) getInstanceURL(key *store.Key) url.URL {
 	}
 }
 
-func (x *Relay) getInstance(key *store.Key) string {
+func (x *Relay) getInstance(key *storage.Key) string {
 	instances := x.peers.Get()
-	for _, keyspace := range store.Keyspaces {
+	for _, keyspace := range storage.Keyspaces {
 		if keyspace.InKeyspace(key) {
 			stride := keyspace.GetRange() / len(instances)
 			idx := keyspace.GetPosition(key) / stride

@@ -2,7 +2,7 @@ package instance
 
 import (
 	"bytes"
-	"disco/store"
+	"disco/storage"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -12,7 +12,7 @@ import (
 
 func TestInstance_FetchError(t *testing.T) {
 	s := NewInstance(nil)
-	key, _ := store.NewKey("test")
+	key, _ := storage.NewKey("test")
 	if _, err := s.Fetch(key); err == nil {
 		t.Error("expected error")
 	} else if "unknown key: \"test\"" != err.Error() {
@@ -22,7 +22,7 @@ func TestInstance_FetchError(t *testing.T) {
 
 func TestInstance_FetchPut(t *testing.T) {
 	s := NewInstance(nil)
-	key, _ := store.NewKey("test")
+	key, _ := storage.NewKey("test")
 	s.Put(key, "wat")
 	if v, err := s.Fetch(key); err != nil {
 		t.Errorf("unexpected error: %q", err)
@@ -67,7 +67,7 @@ func TestInstance_MissingKey(t *testing.T) {
 func TestInstance_HappyPath(t *testing.T) {
 	s := NewInstance(nil)
 	expected := "YAY this is the proper value"
-	key, _ := store.NewKey("wat")
+	key, _ := storage.NewKey("wat")
 	s.Put(key, expected)
 	w := httptest.NewRecorder()
 	lnk, _ := url.Parse("http://localhost/?key=" + key.String())

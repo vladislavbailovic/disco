@@ -5,7 +5,7 @@ import (
 	"disco/network"
 	"disco/network/instance"
 	"disco/network/relay"
-	"disco/store"
+	"disco/storage"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -15,7 +15,7 @@ import (
 /// diskey: Distributed in-memory key-value storage
 
 func main() {
-	store := store.NewPlainStore()
+	store := storage.NewPlainStore()
 	cfg := network.NewConfig("storage", ":6660")
 
 	peers := network.Autodiscover("storage-one")
