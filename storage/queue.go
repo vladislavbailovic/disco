@@ -15,6 +15,20 @@ const (
 	JobExpired
 )
 
+func (x JobStatus) String() string {
+	switch x {
+	case JobQueued:
+		return "Queued"
+	case JobRunning:
+		return "Running"
+	case JobDone:
+		return "Done"
+	case JobExpired:
+		return "Expired"
+	}
+	panic("Uknown job status")
+}
+
 type Job struct {
 	Status  JobStatus
 	Payload string
@@ -26,6 +40,10 @@ func NewJob(pld string) Job {
 }
 
 func (x Job) Value() string { return x.Payload }
+
+func (x Job) isFinished() bool {
+	return x.Status == JobDone || x.Status == JobExpired
+}
 
 type Queue struct {
 	lock sync.RWMutex
@@ -66,11 +84,18 @@ func (x *Queue) Put(key *Key, val string) error {
 	job, ok := x.data[key.String()]
 	x.lock.RUnlock()
 
-	if ok && job.Status == JobQueued {
+	if ok && !job.isFinished() {
 		return fmt.Errorf("job %q already queued", key)
 	}
 	job = NewJob(val)
 	return x.put(key, job)
+}
+
+func (x *Queue) Delete(key *Key) error {
+	x.lock.Lock()
+	defer x.lock.Unlock()
+	delete(x.data, key.String())
+	return nil
 }
 
 func (x *Queue) put(key *Key, job Job) error {
@@ -114,6 +139,6 @@ func (x *TimedQueue) expire(key *Key) {
 }
 
 func (x *TimedQueue) remove(key *Key) {
-	<-time.After(x.expiry)
-	delete(x.Queue.data, key.String())
+	<-time.After(x.removal)
+	x.Delete(key)
 }

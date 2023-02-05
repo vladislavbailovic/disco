@@ -35,9 +35,9 @@ func (x *Instance) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	case http.MethodPost:
 		x.handlePost(key, w, r)
+		return
 	case http.MethodDelete:
 		x.handleDelete(key, w, r)
-		return
 		return
 	}
 
@@ -83,6 +83,11 @@ func (x *Instance) handlePost(key *storage.Key, w http.ResponseWriter, r *http.R
 		return
 	}
 
-	x.Put(key, string(value))
+	if err := x.Put(key, string(value)); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, "%s", err)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
 }
