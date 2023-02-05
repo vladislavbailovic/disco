@@ -22,6 +22,15 @@ func NewInstance(str storage.Storer) *Instance {
 }
 
 func (x *Instance) Handle(w http.ResponseWriter, r *http.Request) {
+	// Validate x-relay-key
+	relayKey := r.Header.Get("x-relay-key")
+	// TODO: make sane
+	if relayKey != "wat" {
+		w.WriteHeader(http.StatusForbidden)
+		fmt.Fprintf(w, "invalid relayKey: %q", relayKey)
+		return
+	}
+
 	key, err := storage.NewKey(r.URL.Query().Get("key"))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)

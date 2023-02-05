@@ -35,10 +35,10 @@ func TestInstance_NoKey(t *testing.T) {
 	s := NewInstance(nil)
 	w := httptest.NewRecorder()
 	lnk, _ := url.Parse("http://localhost/")
-	s.Handle(w, &http.Request{
-		URL:    lnk,
-		Method: http.MethodGet,
-	})
+	req, _ := http.NewRequest(
+		http.MethodGet, lnk.String(), nil)
+	req.Header.Add("x-relay-key", "wat")
+	s.Handle(w, req)
 	if w.Code != http.StatusBadRequest {
 		t.Errorf("expected Err400 on no key")
 	}
@@ -48,10 +48,10 @@ func TestInstance_MissingKey(t *testing.T) {
 	s := NewInstance(nil)
 	w := httptest.NewRecorder()
 	lnk, _ := url.Parse("http://localhost/?key=wat")
-	s.Handle(w, &http.Request{
-		URL:    lnk,
-		Method: http.MethodGet,
-	})
+	req, _ := http.NewRequest(
+		http.MethodGet, lnk.String(), nil)
+	req.Header.Add("x-relay-key", "wat")
+	s.Handle(w, req)
 	if w.Code != http.StatusNotFound {
 		t.Errorf("expected Err404 on missing key")
 	}
@@ -71,10 +71,10 @@ func TestInstance_HappyPath(t *testing.T) {
 	s.Put(key, expected)
 	w := httptest.NewRecorder()
 	lnk, _ := url.Parse("http://localhost/?key=" + key.String())
-	s.Handle(w, &http.Request{
-		URL:    lnk,
-		Method: http.MethodGet,
-	})
+	req, _ := http.NewRequest(
+		http.MethodGet, lnk.String(), nil)
+	req.Header.Add("x-relay-key", "wat")
+	s.Handle(w, req)
 	if w.Code != http.StatusOK {
 		t.Errorf("expected 200OK with proper key")
 	}
@@ -93,12 +93,12 @@ func TestInstance_HappyPathRoundtrip(t *testing.T) {
 	lnk, _ := url.Parse("http://localhost/?key=wat")
 
 	w := httptest.NewRecorder()
-	s.Handle(w, &http.Request{
-		URL:    lnk,
-		Method: http.MethodGet,
-	})
+	req, _ := http.NewRequest(
+		http.MethodGet, lnk.String(), nil)
+	req.Header.Add("x-relay-key", "wat")
+	s.Handle(w, req)
 	if w.Code != http.StatusNotFound {
-		t.Errorf("should be not found initially")
+		t.Errorf("should be not found initially: %d", w.Code)
 	}
 
 	w = httptest.NewRecorder()
@@ -107,16 +107,17 @@ func TestInstance_HappyPathRoundtrip(t *testing.T) {
 		lnk.String(),
 		bytes.NewBuffer([]byte(expected)),
 	)
+	post.Header.Add("x-relay-key", "wat")
 	s.Handle(w, post)
 	if w.Code != http.StatusOK {
-		t.Errorf("expected 200OK saving the value")
+		t.Errorf("expected 200OK saving the value: %d", w.Code)
 	}
 
 	w = httptest.NewRecorder()
-	s.Handle(w, &http.Request{
-		URL:    lnk,
-		Method: http.MethodGet,
-	})
+	req, _ = http.NewRequest(
+		http.MethodGet, lnk.String(), nil)
+	req.Header.Add("x-relay-key", "wat")
+	s.Handle(w, req)
 	if w.Code != http.StatusOK {
 		t.Errorf("should be found now")
 	}

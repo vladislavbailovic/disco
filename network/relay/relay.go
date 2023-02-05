@@ -69,6 +69,8 @@ func (x *Relay) Handle(w http.ResponseWriter, r *http.Request) {
 func (x *Relay) handleDelete(reqUrl url.URL, w http.ResponseWriter, r *http.Request) {
 	req, err := http.NewRequest(
 		http.MethodDelete, reqUrl.String(), nil)
+	// TODO: proper key
+	req.Header.Add("x-relay-key", "wat")
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
@@ -91,7 +93,11 @@ func (x *Relay) handleDelete(reqUrl url.URL, w http.ResponseWriter, r *http.Requ
 }
 
 func (x *Relay) handleGet(reqUrl url.URL, w http.ResponseWriter, r *http.Request) {
-	resp, err := x.client.Get(reqUrl.String())
+	// TODO: proper key
+	req, err := http.NewRequest(
+		http.MethodGet, reqUrl.String(), nil)
+	req.Header.Add("x-relay-key", "wat")
+	resp, err := x.client.Do(req)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
@@ -114,10 +120,13 @@ func (x *Relay) handlePost(reqUrl url.URL, w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	resp, err := x.client.Post(
+	// TODO: proper key
+	req, err := http.NewRequest(
+		http.MethodPost,
 		reqUrl.String(),
-		r.Header.Get("content-type"),
 		bytes.NewBuffer(value))
+	req.Header.Add("x-relay-key", "wat")
+	resp, err := x.client.Do(req)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
