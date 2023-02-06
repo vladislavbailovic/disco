@@ -34,6 +34,7 @@ func TestLog_LevelDispatch_LogWarningsAndAbove(t *testing.T) {
 		LevelInfo:    false,
 		LevelDebug:   false,
 		LevelAll:     false,
+		LevelTrace:   false,
 	}
 	for lvl, want := range suite {
 		t.Run(lvl.String(), func(t *testing.T) {

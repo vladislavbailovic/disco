@@ -15,6 +15,7 @@ const (
 	LevelInfo
 	LevelDebug
 	LevelAll
+	LevelTrace
 )
 
 func (x LogLevel) String() string {
@@ -29,6 +30,8 @@ func (x LogLevel) String() string {
 		return "INFO"
 	case LevelDebug:
 		return "DEBUG"
+	case LevelTrace:
+		return "TRACE"
 	case LevelAll:
 		return "all"
 	}
@@ -64,11 +67,15 @@ func NewLogger(cfg Config) Logger {
 
 func (x Logger) log(lvl LogLevel, format string, args ...any) bool {
 	if lvl > x.cfg.Level {
-		// fmt.Printf("\t- %q (%d) is greater than %q (%d)\n", lvl, lvl, x.cfg.Level, x.cfg.Level)
 		return false
 	}
 
-	fmt.Fprintf(x.w, "[%s] %s\n",
+	msg := "[%s] %s\n"
+	if lvl == LevelTrace {
+		msg = "\t" + msg
+	}
+
+	fmt.Fprintf(x.w, msg,
 		lvl, fmt.Sprintf(format, args...))
 	return true
 }
@@ -91,4 +98,8 @@ func (x Logger) Info(format string, args ...any) {
 
 func (x Logger) Debug(format string, args ...any) {
 	x.log(LevelDebug, format, args...)
+}
+
+func (x Logger) Trace(format string, args ...any) {
+	x.log(LevelTrace, format, args...)
 }

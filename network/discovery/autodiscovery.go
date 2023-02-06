@@ -23,6 +23,7 @@ func Run(seed string) *network.Peers {
 }
 
 func hello(seed string, peers *network.Peers) {
+	log := logging.Get()
 	t := time.Tick(time.Second * 5)
 	myself := fmt.Sprintf("%s", network.GetOutboundIP())
 	client := http.Client{
@@ -38,19 +39,20 @@ func hello(seed string, peers *network.Peers) {
 			}
 			for _, addr := range cons {
 				if addr == myself {
-					// fmt.Println("not going to be pinging myself", addr, myself)
+					log.Trace("[%v] not going to be pinging myself (%v)", addr, myself)
 					continue
 				}
-				// fmt.Println("pinging", addr)
+
+				log.Trace("pinging %v", addr)
 				r, err := client.Get(fmt.Sprintf("http://%s:6660/hello", addr))
 				if err != nil {
-					// fmt.Println("well, something didn't go well", err)
+					log.Trace("error pinging %v: %v", addr, err)
 					peers.Unconfirm(addr)
 					continue
 				}
 
 				if r.StatusCode != http.StatusOK {
-					// fmt.Println("NOT OK!", addr)
+					log.Trace("%v responded with non-200 code: %d", addr, r.StatusCode)
 					peers.Unconfirm(addr)
 					continue
 				}
@@ -58,11 +60,11 @@ func hello(seed string, peers *network.Peers) {
 				var res []string
 				defer r.Body.Close()
 				if err := json.NewDecoder(r.Body).Decode(&res); err != nil {
-					// fmt.Println("error parsing response", err)
+					log.Trace("error parsing response from %v: %v", addr, err)
 					peers.Unconfirm(addr)
 					continue
 				}
-				// fmt.Println("adding cons from addr", addr, res)
+				log.Trace("adding connections %v from addr %v", res, addr)
 				peers.Add(res...)
 
 				peers.SetReady(len(res) == len(peers.GetConfirmed()))
@@ -75,11 +77,10 @@ func handleHello(peers *network.Peers) func(http.ResponseWriter, *http.Request) 
 	return func(w http.ResponseWriter, r *http.Request) {
 		host, _ /*port*/, err := net.SplitHostPort(r.RemoteAddr)
 		if err != nil {
-			// fmt.Println("unable to split host/port", err)
 			logging.Get().Error("discovery: unable to split host/port: %v", err)
 			return
 		}
-		// fmt.Println("confirming", host)
+		logging.Get().Trace("confirming %v", host)
 		peers.Confirm(host)
 		json.NewEncoder(w).Encode(peers.Get())
 	}
