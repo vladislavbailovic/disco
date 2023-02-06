@@ -53,10 +53,7 @@ func (x *Data) handle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	reqUrl := x.getInstanceURL(key)
-	// fmt.Printf("[%v]: dispatching to instance %q\n",
-	// 	network.GetOutboundIP(),
-	// 	reqUrl.String())
-	log.Info("[%v]: dispatching to instance %q\n",
+	log.Info("[%v]: dispatching to instance %q",
 		network.GetOutboundIP(),
 		reqUrl.String())
 

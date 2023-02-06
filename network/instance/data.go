@@ -58,9 +58,7 @@ func (x *Data) handle(w http.ResponseWriter, r *http.Request) {
 }
 
 func (x *Data) handleGet(key *storage.Key, w http.ResponseWriter, r *http.Request) {
-	// fmt.Printf("[%v]: gets key %q from storage\n",
-	// 	network.GetOutboundIP(), key)
-	logging.Get().Info("[%v]: gets key %q from storage\n",
+	logging.Get().Info("[%v]: gets key %q from storage",
 		network.GetOutboundIP(), key)
 
 	value, err := x.Fetch(key)
@@ -76,9 +74,7 @@ func (x *Data) handleGet(key *storage.Key, w http.ResponseWriter, r *http.Reques
 }
 
 func (x *Data) handleDelete(key *storage.Key, w http.ResponseWriter, r *http.Request) {
-	// fmt.Printf("[%v]: deletes key %q from storage\n",
-	// 	network.GetOutboundIP(), key)
-	logging.Get().Info("[%v]: deletes key %q from storage\n",
+	logging.Get().Info("[%v]: deletes key %q from storage",
 		network.GetOutboundIP(), key)
 
 	if err := x.Delete(key); err != nil {
@@ -91,9 +87,7 @@ func (x *Data) handleDelete(key *storage.Key, w http.ResponseWriter, r *http.Req
 }
 
 func (x *Data) handlePost(key *storage.Key, w http.ResponseWriter, r *http.Request) {
-	// fmt.Printf("[%v]: sets key %q in storage\n",
-	// 	network.GetOutboundIP(), key)
-	logging.Get().Info("[%v]: sets key %q in storage\n",
+	logging.Get().Info("[%v]: sets key %q in storage",
 		network.GetOutboundIP(), key)
 
 	defer r.Body.Close()

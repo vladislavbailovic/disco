@@ -2,12 +2,12 @@ package main
 
 import (
 	"bytes"
+	"disco/logging"
 	"disco/network"
 	"disco/network/discovery"
 	"disco/network/instance"
 	"disco/network/relay"
 	"disco/storage"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -16,6 +16,10 @@ import (
 /// diskey: Distributed in-memory key-value storage
 
 func main() {
+	logging.Initialize(logging.Config{
+		Level: logging.LevelAll,
+	})
+	log := logging.Get()
 	store := storage.NewTimedQueue(6 * time.Second)
 	cfg := network.NewConfig("storage", ":6660")
 
@@ -35,13 +39,13 @@ func main() {
 			r, err := http.Get(
 				"http://localhost:6660/storage?key=ZZZ")
 			if err != nil {
-				fmt.Println(err)
-				panic("wat")
+				log.Fatal("Error sending GET to seed: %v", err)
+				panic("GET error")
 			}
 			resp, _ := ioutil.ReadAll(r.Body)
 			r.Body.Close()
 
-			fmt.Printf("[%v] GET: %s (peers: %d)\n",
+			log.Info("[%v] GET: %s (peers: %d)",
 				r.StatusCode, resp, len(peers.Get()))
 
 			if r.StatusCode != http.StatusOK {
@@ -55,13 +59,13 @@ func main() {
 					"application/json",
 					bytes.NewBuffer([]byte(`{"Payload": "Yo"}`)))
 				if err != nil {
-					fmt.Println(err)
-					panic("wat")
+					log.Fatal("Error sending POST to seed: %v", err)
+					panic("POST error")
 				}
 				resp, _ := ioutil.ReadAll(r.Body)
 				r.Body.Close()
 
-				fmt.Printf("[%v] POST: %s\n",
+				log.Info("[%v] POST: %s",
 					r.StatusCode, resp)
 			}
 		}

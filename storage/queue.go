@@ -51,7 +51,6 @@ func (x Job) Value() string {
 	dst, err := json.Marshal(x)
 	if err != nil {
 		logging.Get().Error("Marshaling job to JSON: %v", err)
-		// fmt.Printf("Error marshalling JSON: %v\n", err)
 	}
 	return string(dst)
 }

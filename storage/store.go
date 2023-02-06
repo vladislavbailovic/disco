@@ -52,7 +52,6 @@ func (x *Stats) Value() string {
 	dst, err := json.Marshal(x)
 	if err != nil {
 		logging.Get().Error("Marshaling stats to JSON: %v", err)
-		// fmt.Printf("Error marshalling JSON: %v\n", err)
 	}
 	return string(dst)
 }
