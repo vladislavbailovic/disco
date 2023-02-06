@@ -1,6 +1,7 @@
 package relay
 
 import (
+	"disco/logging"
 	"disco/network"
 	"disco/storage"
 	"fmt"
@@ -59,6 +60,7 @@ func (x *Metrics) handle(w http.ResponseWriter, r *http.Request) {
 
 func (x *Metrics) getAllStats() *storage.Stats {
 	stats := storage.NewStats()
+	log := logging.Get()
 	var wg sync.WaitGroup
 
 	for _, peer := range x.peers.Get() {
@@ -72,27 +74,31 @@ func (x *Metrics) getAllStats() *storage.Stats {
 			req, err := http.NewRequest(
 				http.MethodGet, reqUrl.String(), nil)
 			if err != nil {
-				fmt.Printf("Error building request to %q: %v\n", p, err)
+				// fmt.Printf("Error building request to %q: %v\n", p, err)
+				log.Error("Error building metric request to %q: %v\n", p, err)
 				return
 			}
 
 			req.Header.Add("x-relay-key", x.apiKey.String())
 			resp, err := x.client.Do(req)
 			if err != nil {
-				fmt.Printf("Error getting %q: %v\n", p, err)
+				// fmt.Printf("Error getting %q: %v\n", p, err)
+				log.Error("Error getting metric from %q: %v\n", p, err)
 				return
 			}
 
 			defer resp.Body.Close()
 			value, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
-				fmt.Printf("Error reading response from %q: %v\n", p, err)
+				// fmt.Printf("Error reading response from %q: %v\n", p, err)
+				log.Error("Error reading metric response from %q: %v\n", p, err)
 				return
 			}
 
 			is, err := storage.DecodeStats(value)
 			if err != nil {
-				fmt.Printf("Error decoding stats from %q: %v", p, err)
+				// fmt.Printf("Error decoding stats from %q: %v", p, err)
+				log.Error("Error decoding stats from %q: %v", p, err)
 				return
 			}
 

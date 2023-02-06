@@ -68,7 +68,7 @@ func (x Logger) log(lvl LogLevel, format string, args ...any) bool {
 		return false
 	}
 
-	fmt.Fprintf(x.w, "[%s] %s",
+	fmt.Fprintf(x.w, "[%s] %s\n",
 		lvl, fmt.Sprintf(format, args...))
 	return true
 }

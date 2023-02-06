@@ -1,6 +1,7 @@
 package discovery
 
 import (
+	"disco/logging"
 	"disco/network"
 	"encoding/json"
 	"fmt"
@@ -74,7 +75,8 @@ func handleHello(peers *network.Peers) func(http.ResponseWriter, *http.Request) 
 	return func(w http.ResponseWriter, r *http.Request) {
 		host, _ /*port*/, err := net.SplitHostPort(r.RemoteAddr)
 		if err != nil {
-			fmt.Println("unable to split host/port", err)
+			// fmt.Println("unable to split host/port", err)
+			logging.Get().Error("discovery: unable to split host/port: %v", err)
 			return
 		}
 		// fmt.Println("confirming", host)

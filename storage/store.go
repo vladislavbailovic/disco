@@ -1,8 +1,8 @@
 package storage
 
 import (
+	"disco/logging"
 	"encoding/json"
-	"fmt"
 )
 
 type Storer interface {
@@ -51,7 +51,8 @@ func (x *Stats) MIME() ContentType {
 func (x *Stats) Value() string {
 	dst, err := json.Marshal(x)
 	if err != nil {
-		fmt.Printf("Error marshalling JSON: %v\n", err)
+		logging.Get().Error("Marshaling stats to JSON: %v", err)
+		// fmt.Printf("Error marshalling JSON: %v\n", err)
 	}
 	return string(dst)
 }
@@ -106,5 +107,6 @@ func (x ContentType) String() string {
 	case ContentTypeJSON:
 		return "application/json"
 	}
+	logging.Get().Fatal("Unknown content type: %d", x)
 	panic("Unknown content type")
 }

@@ -2,6 +2,7 @@ package relay
 
 import (
 	"bytes"
+	"disco/logging"
 	"disco/network"
 	"disco/storage"
 	"fmt"
@@ -31,10 +32,14 @@ func NewData(peers *network.Peers, cfg network.Config) *Data {
 }
 
 func (x *Data) handle(w http.ResponseWriter, r *http.Request) {
+
+	log := logging.Get()
 	if x.peers == nil || x.peers.Status() != network.Ready {
 		w.WriteHeader(http.StatusInternalServerError)
 		if x.peers != nil {
 			w.Write([]byte(x.peers.Status().String()))
+		} else {
+			log.Debug("no peers")
 		}
 		return
 	}
@@ -43,11 +48,15 @@ func (x *Data) handle(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintf(w, err.Error())
+		log.Error("Unable to parse key: %v", err)
 		return
 	}
 
 	reqUrl := x.getInstanceURL(key)
-	fmt.Printf("[%v]: dispatching to instance %q\n",
+	// fmt.Printf("[%v]: dispatching to instance %q\n",
+	// 	network.GetOutboundIP(),
+	// 	reqUrl.String())
+	log.Info("[%v]: dispatching to instance %q\n",
 		network.GetOutboundIP(),
 		reqUrl.String())
 
@@ -160,5 +169,8 @@ func (x *Data) getInstance(key *storage.Key) string {
 			return instances[idx]
 		}
 	}
+	log := logging.Get()
+	log.Fatal("Unable to map instance to key %v", key)
+	log.Debug("Instances: %v", instances)
 	panic("Unable to map instance to key")
 }

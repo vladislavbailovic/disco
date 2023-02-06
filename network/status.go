@@ -1,5 +1,7 @@
 package network
 
+import "disco/logging"
+
 type DiscoveryStatus uint8
 
 const (
@@ -17,5 +19,6 @@ func (x DiscoveryStatus) String() string {
 	case Ready:
 		return "Ready"
 	}
-	panic("unknown discovery status")
+	logging.Get().Fatal("Unknown discovery status: %d", x)
+	panic("Unknown discovery status")
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"disco/logging"
 	"disco/network"
 	"disco/network/discovery"
 	"disco/network/instance"
@@ -12,6 +13,9 @@ import (
 /// diskey: Distributed in-memory key-value storage
 
 func main() {
+	logging.Initialize(logging.Config{
+		Level: logging.LevelAll,
+	})
 	store := storage.NewTimedQueue(5 * 60 * time.Second)
 	cfg := network.NewConfig("storage", ":6660")
 

@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"disco/logging"
 	"encoding/json"
 	"fmt"
 	"sync"
@@ -27,6 +28,7 @@ func (x JobStatus) String() string {
 	case JobExpired:
 		return "Expired"
 	}
+	logging.Get().Fatal("Unknown job status: %d", x)
 	panic("Unknown job status")
 }
 
@@ -48,7 +50,8 @@ func (x Job) MIME() ContentType { return ContentTypeJSON }
 func (x Job) Value() string {
 	dst, err := json.Marshal(x)
 	if err != nil {
-		fmt.Printf("Error marshalling JSON: %v\n", err)
+		logging.Get().Error("Marshaling job to JSON: %v", err)
+		// fmt.Printf("Error marshalling JSON: %v\n", err)
 	}
 	return string(dst)
 }
@@ -84,8 +87,10 @@ func (x *Queue) Fetch(key *Key) (Valuer, error) {
 
 	job.Status = JobRunning
 	if err := x.put(key, job); err != nil {
-		return nil, fmt.Errorf(
+		err = fmt.Errorf(
 			"unable to update job %q status: %w", key, err)
+		logging.Get().Warning("Queue Fetch: %v", err)
+		return nil, err
 	}
 
 	return job, nil
@@ -97,12 +102,16 @@ func (x *Queue) Put(key *Key, val string) error {
 	x.lock.RUnlock()
 
 	if ok && !job.isFinished() {
-		return fmt.Errorf("job %q already queued", key)
+		err := fmt.Errorf("job %q already queued", key)
+		logging.Get().Warning("Queue Put: %v", err)
+		return err
 	}
 	job, err := NewJob(val)
 	if err != nil {
-		return fmt.Errorf(
+		err := fmt.Errorf(
 			"error serializing job %q: %v", key, err)
+		logging.Get().Warning("Queue Put: %v", err)
+		return err
 	}
 	return x.put(key, job)
 }
@@ -173,13 +182,17 @@ func (x *TimedQueue) expire(key *Key) {
 	job, ok := x.data[key.String()]
 	x.lock.RUnlock()
 
+	logging.Get().Debug("expiring job %q", key)
 	if ok {
 		job.Status = JobExpired
 		x.put(key, job)
+	} else {
+		logging.Get().Info("unable to expire missing job: %q", key)
 	}
 }
 
 func (x *TimedQueue) remove(key *Key) {
 	<-time.After(x.removal)
+	logging.Get().Debug("deleting job %q", key)
 	x.Delete(key)
 }
