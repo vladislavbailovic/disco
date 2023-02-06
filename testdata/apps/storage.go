@@ -17,7 +17,7 @@ import (
 
 func main() {
 	logging.Initialize(logging.Config{
-		Level: logging.LevelAll,
+		Level: logging.LevelTrace,
 	})
 	log := logging.Get()
 	store := storage.NewTimedQueue(6 * time.Second)
